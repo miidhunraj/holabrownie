@@ -567,27 +567,19 @@ let allCategories = [];
 let currentUser = null;
 
 // ===== AUTH =====
-
-// Check existing session on page load
 (async () => {
   const { data: { session } } = await supabase.auth.getSession();
-  if (session) {
-    currentUser = session.user;
-    showApp();
-  }
+  if (session) { currentUser = session.user; showApp(); }
 })();
 
 supabase.auth.onAuthStateChange((event, session) => {
-  if (event === 'SIGNED_OUT') {
-    currentUser = null;
-    showLogin();
-  }
+  if (event === 'SIGNED_OUT') { currentUser = null; showLogin(); }
 });
 
 async function doLogin() {
   const email = document.getElementById('loginEmail').value.trim();
-  const pass = document.getElementById('loginPass').value;
-  const btn = document.getElementById('loginBtn');
+  const pass  = document.getElementById('loginPass').value;
+  const btn   = document.getElementById('loginBtn');
 
   if (!email || !pass) { showLoginError('Please enter email and password.'); return; }
 
@@ -600,7 +592,7 @@ async function doLogin() {
     if (error) { showLoginError(error.message); return; }
     currentUser = data.user;
     showApp();
-  } catch (e) {
+  } catch(e) {
     showLoginError('Network error: ' + e.message);
   } finally {
     btn.disabled = false;
@@ -696,7 +688,7 @@ function renderDashboard() {
 
   document.getElementById('dashStats').innerHTML = `
     <div class="stat-card"><div class="stat-icon">🍽</div><div class="stat-num">${allItems.length}</div><div class="stat-label">Total Items</div></div>
-    <div class="stat-card"><div class="stat-icon">👁</div><div class="stat-num">${visible}</div><div class="stat-label">Available</div></div>
+    <div class="stat-card"><div class="stat-icon">👁</div><div class="stat-num">${visible}</div><div class="stat-label">Visible</div></div>
     <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-num">${bs}</div><div class="stat-label">Best Sellers</div></div>
     <div class="stat-card"><div class="stat-icon">🏷</div><div class="stat-num">${allCategories.length}</div><div class="stat-label">Categories</div></div>
   `;
@@ -712,7 +704,7 @@ function renderDashboard() {
         <td style="font-weight:600">${esc(item.title)}</td>
         <td style="color:var(--text-dim)">${cat ? cat.name : '—'}</td>
         <td>₹${item.price}</td>
-        <td><span class="badge ${item.is_available ? 'badge-on' : 'badge-off'}">${item.is_available ? 'Available' : 'Unavailable'}</span></td>
+        <td><span class="badge ${item.is_available ? 'badge-on' : 'badge-off'}">${item.is_available ? 'Visible' : 'Hidden'}</span></td>
       </tr>`;
     }).join('');
   }
@@ -724,7 +716,7 @@ function renderItemsTable() {
   const catF = document.getElementById('itemCatFilter')?.value || '';
 
   let items = allItems;
-  if (q) items = items.filter(i => (i.title || '').toLowerCase().includes(q) || (i.description || '').toLowerCase().includes(q));
+  if (q) items = items.filter(i => i.title.toLowerCase().includes(q) || (i.description || '').toLowerCase().includes(q));
   if (catF) items = items.filter(i => i.category_id === catF);
 
   document.getElementById('itemsBody').innerHTML = items.length ? items.map(item => {
@@ -737,11 +729,11 @@ function renderItemsTable() {
       </td>
       <td style="color:var(--text-dim)">${cat ? `${cat.icon || ''} ${cat.name}` : '—'}</td>
       <td style="font-weight:600">₹${item.price}</td>
-      <td><span class="badge ${item.is_available ? 'badge-on' : 'badge-off'}">${item.is_available ? 'Available' : 'Unavailable'}</span></td>
+      <td><span class="badge ${item.is_available ? 'badge-on' : 'badge-off'}">${item.is_available ? 'Visible' : 'Hidden'}</span></td>
       <td>
         <div class="action-btns">
           <button class="btn-sm btn-edit" onclick="openEditItem('${item.id}')">✏ Edit</button>
-          <button class="btn-sm btn-toggle" onclick="toggleAvailable('${item.id}')">${item.is_available ? '🙈 Hide' : '👁 Show'}</button>
+          <button class="btn-sm btn-toggle" onclick="toggleVisible('${item.id}')">${item.is_available ? '🙈 Hide' : '👁 Show'}</button>
           <button class="btn-sm btn-delete" onclick="deleteItem('${item.id}')">🗑</button>
         </div>
       </td>
@@ -845,7 +837,7 @@ async function saveItem() {
   showToast(id ? 'Item updated ✓' : 'Item added ✓', 'success');
 }
 
-async function toggleAvailable(id) {
+async function toggleVisible(id) {
   const item = allItems.find(i => i.id === id);
   if (!item) return;
   const { error } = await supabase.from('items').update({ is_available: !item.is_available }).eq('id', id);
@@ -857,7 +849,7 @@ async function toggleAvailable(id) {
 
 async function deleteItem(id) {
   const item = allItems.find(i => i.id === id);
-  if (!confirm(`Delete "${item?.title}"? This cannot be undone.`)) return;
+  if (!confirm(`Delete "${item?.name}"? This cannot be undone.`)) return;
   const { error } = await supabase.from('items').delete().eq('id', id);
   if (error) { showToast('Delete failed', 'error'); return; }
   allItems = allItems.filter(i => i.id !== id);
