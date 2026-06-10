@@ -1402,7 +1402,7 @@ function renderMenu() {
   let items = allItems;
   if (activeCategory !== 'all') items = items.filter(i => i.category_id === activeCategory);
   if (searchQuery) items = items.filter(i =>
-    (i.title || '').toLowerCase().includes(searchQuery) || (i.description || '').toLowerCase().includes(searchQuery)
+    (i.title||'').toLowerCase().includes(searchQuery) || (i.description||'').toLowerCase().includes(searchQuery)
   );
 
   const grid = document.getElementById('menuGrid');
