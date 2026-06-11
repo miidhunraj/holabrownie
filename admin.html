@@ -371,7 +371,7 @@ textarea.form-input { resize: vertical; min-height: 80px; }
   <!-- SIDEBAR -->
   <div class="sidebar">
     <div class="sidebar-logo">
-      <h1>🍫 HB Admin</h1>
+      <h1> HB Admin</h1>
       <p>Dashboard</p>
     </div>
     <nav class="sidebar-nav">
@@ -962,7 +962,7 @@ async function renderAnalytics() {
 
 // ===== QR =====
 function renderQR() {
-  const url = window.location.origin + window.location.pathname.replace('admin.html', 'index.html').replace('admin/', '');
+  const url = window.location.origin + '/';
   document.getElementById('menuUrl').textContent = url;
   const el = document.getElementById('qrCode');
   el.innerHTML = '';
