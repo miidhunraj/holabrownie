@@ -1196,8 +1196,8 @@ footer {
       <div class="footer-logo"><em>Hola</em> Brownie!!</div>
       <p class="footer-tagline">Handcrafted chocolate desserts made with love and the finest ingredients. Every bite tells a story.</p>
       <div class="footer-social">
-        <a class="social-btn" href="instagram.com/holabrownie_mglr" title="Instagram">📸</a>
-        <a class="social-btn" href="wa.me/+917902770041" title="WhatsApp">💬</a>
+        <a class="social-btn" href="https://instagram.com/holabrownie_mglr" title="Instagram">📸</a>
+        <a class="social-btn" href="https://wa.me/+917902770041" title="WhatsApp">💬</a>
         <a class="social-btn" href="#" title="Facebook">📘</a>
       </div>
     </div>
@@ -1439,7 +1439,7 @@ function renderMenu() {
 function quickOrderWA(itemId) {
   const item = allItems.find(i => i.id === itemId);
   if (!item) return;
-  const msg = encodeURIComponent(`🍫 *Hola Brownie Order*\n\n• ${item.title} — ₹${item.price}\n\nHi! I'd like to order this item. Please confirm availability!`);
+  const msg = encodeURIComponent(`🍫 *Hola Brownie *\n\n• ${item.title} — ₹${item.price}\n\nHi! I'd like to order this item. Please confirm availability!`);
   window.open(`https://wa.me/917902770041?text=${msg}`, '_blank');
 }
 
