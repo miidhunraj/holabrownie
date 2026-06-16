@@ -816,28 +816,6 @@ section { padding: 90px 36px; max-width: 1200px; margin: 0 auto; }
 }
 #lightboxClose:hover { background: rgba(255,255,255,0.28); }
 
-/* ===== BACK TO TOP ===== */
-#backToTop {
-  position: fixed;
-  bottom: 90px;
-  left: 22px;
-  z-index: 400;
-  width: 48px; height: 48px;
-  background: var(--surface2);
-  border: 1.5px solid var(--border);
-  border-radius: 50%;
-  color: var(--pink-main);
-  font-size: 1.2rem;
-  cursor: pointer;
-  box-shadow: var(--shadow-sm);
-  transition: all 0.3s var(--ease);
-  display: flex; align-items: center; justify-content: center;
-  opacity: 0;
-  pointer-events: none;
-}
-#backToTop.visible { opacity: 1; pointer-events: auto; }
-#backToTop:hover { background: var(--pink-main); color: #fff; transform: translateY(-3px); }
-
 /* ===== MOBILE BOTTOM NAV ===== */
 #mobileNav {
   position: fixed;
@@ -1257,13 +1235,13 @@ function updateStoreStatus() {
   // Open 11am–11pm
   if (h >= 11 && h < 22.5) {
     banner.className = 'open';
-    text.textContent = '🟢 Open Now · Mon–Sun, 11am–11pm';
+    text.textContent = ' Open Now · Mon–Sun, 11am–11pm';
   } else if (h >= 22.5 && h < 23) {
     banner.className = 'closing';
-    text.textContent = '🟡 Closing Soon · We close at 11pm';
+    text.textContent = ' Closing Soon · We close at 11pm';
   } else {
     banner.className = 'closed';
-    text.textContent = '🔴 Closed · Opens daily at 11am';
+    text.textContent = ' Closed · Opens daily at 11am';
   }
 }
 updateStoreStatus();
@@ -1274,8 +1252,8 @@ function toggleDark() {
   const isDark = document.body.classList.toggle('dark-mode');
   const btn = document.getElementById('darkToggle');
   const mobIcon = document.getElementById('mobDarkIcon');
-  if (btn) btn.textContent = isDark ? '☀️ Light' : '🌙 Dark';
-  if (mobIcon) mobIcon.textContent = isDark ? '☀️' : '🌙';
+  if (btn) btn.textContent = isDark ? '🌝 Light' : '🌚 Dark';
+  if (mobIcon) mobIcon.textContent = isDark ? '🌝' : '🌚';
   localStorage.setItem('hb_dark', isDark ? '1' : '0');
 }
 if (localStorage.getItem('hb_dark') === '1') toggleDark();
