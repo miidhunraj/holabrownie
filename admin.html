@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Hola Brownie</title>
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg: #FFF5F8;
+  --surface: #FFFFFF;
+  --surface2: #FDE8F0;
+  --rose: #E0437A;
+  --rose-l: #F27AA3;
+  --rose-d: #B02E4F;
+  --text: #2D1B25;
+  --text-dim: #A07090;
+  --text-muted: rgba(45,27,37,0.4);
+  --border: rgba(224,67,122,0.15);
+  --success: #4CAF50;
+  --danger: #E05252;
+  --warn: #F59E0B;
+  --radius: 12px;
+  --radius-lg: 20px;
+  --shadow: 0 8px 32px rgba(224,67,122,0.1);
+  --trans: all 0.25s ease;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 14px; }
+
+/* ===== LOGIN ===== */
+#loginScreen {
+  position: fixed; inset: 0; z-index: 999;
+  background: radial-gradient(ellipse at 40% 40%, #F9D4E5 0%, var(--bg) 70%);
+  display: flex; align-items: center; justify-content: center;
+}
+.login-card {
+  background: var(--surface);
+  border: 1px solid rgba(224,67,122,0.2);
+  border-radius: 24px; padding: 48px 40px;
+  width: 100%; max-width: 420px;
+  text-align: center;
+  box-shadow: 0 32px 80px rgba(224,67,122,0.2);
+  animation: fadeUp 0.6s ease both;
+}
+@keyframes fadeUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+.login-logo { font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900; color: var(--rose-l); margin-bottom: 4px; }
+.login-logo span { color: var(--rose); }
+.login-sub { color: #B07090; font-size: 0.75rem; letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 36px; }
+.login-form { display: flex; flex-direction: column; gap: 14px; text-align: left; }
+.form-label { font-size: 0.72rem; font-weight: 700; color: var(--rose); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; display: block; }
+.form-input {
+  width: 100%; padding: 13px 16px;
+  background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: 10px; color: var(--text);
+  font-family: 'DM Sans', sans-serif; font-size: 0.9rem; outline: none;
+  transition: var(--trans);
+}
+.form-input:focus { border-color: var(--rose); background: #fff; box-shadow: 0 0 0 4px rgba(224,67,122,0.08); }
+.btn-primary {
+  padding: 14px; background: linear-gradient(135deg, var(--rose), var(--rose-l));
+  color: #fff; font-weight: 700; font-size: 0.9rem; border: none;
+  border-radius: 10px; cursor: pointer; margin-top: 6px;
+  transition: var(--trans); display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(224,67,122,0.4); }
+.btn-primary:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+.login-error { color: var(--danger); font-size: 0.8rem; text-align: center; display: none; padding: 10px; background: rgba(224,82,82,0.08); border-radius: 8px; }
+.login-error.visible { display: block; }
+.login-hint { color: var(--text-muted); font-size: 0.72rem; margin-top: 12px; }
+
+/* ===== APP SHELL ===== */
+#appShell { display: flex; height: 100vh; overflow: hidden; }
+.sidebar {
+  width: 220px; flex-shrink: 0;
+  background: linear-gradient(180deg, #B02E4F 0%, #E0437A 100%);
+  display: flex; flex-direction: column; overflow-y: auto;
+}
+.sidebar-logo { padding: 20px 18px; border-bottom: 1px solid rgba(255,255,255,0.15); }
+.sidebar-logo h1 { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: #fff; }
+.sidebar-logo p { font-size: 0.62rem; color: rgba(255,255,255,0.6); letter-spacing: 0.14em; text-transform: uppercase; margin-top: 2px; }
+.sidebar-nav { flex: 1; padding: 16px 10px; display: flex; flex-direction: column; gap: 3px; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px; border-radius: 9px;
+  color: rgba(255,255,255,0.72); font-size: 0.84rem; font-weight: 500;
+  cursor: pointer; transition: var(--trans); border: none; background: none; width: 100%; text-align: left;
+}
+.nav-item:hover { background: rgba(255,255,255,0.15); color: #fff; }
+.nav-item.active { background: rgba(255,255,255,0.22); color: #fff; font-weight: 700; }
+.nav-icon { font-size: 1rem; width: 20px; text-align: center; }
+.sidebar-footer { padding: 12px; border-top: 1px solid rgba(255,255,255,0.15); }
+.btn-logout {
+  width: 100%; padding: 10px;
+  background: rgba(224,82,82,0.12); border: 1px solid rgba(224,82,82,0.25);
+  color: #fff; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: 600;
+  transition: var(--trans);
+}
+.btn-logout:hover { background: rgba(224,82,82,0.28); }
+.sidebar-user {
+  padding: 12px 14px; font-size: 0.72rem;
+  color: rgba(255,255,255,0.55); border-top: 1px solid rgba(255,255,255,0.1);
+}
+.sidebar-user strong { color: rgba(255,255,255,0.8); display: block; margin-bottom: 2px; }
+
+/* ===== MAIN ===== */
+.main { flex: 1; overflow-y: auto; background: var(--bg); display: flex; flex-direction: column; }
+.main-header {
+  position: sticky; top: 0; z-index: 10;
+  padding: 16px 28px;
+  background: rgba(255,245,248,0.96); backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.main-header h2 { font-family: 'Playfair Display', serif; font-size: 1.3rem; color: var(--rose); }
+.header-actions { display: flex; gap: 10px; align-items: center; }
+.btn-add {
+  display: flex; align-items: center; gap: 7px;
+  padding: 9px 18px; background: linear-gradient(135deg, var(--rose), var(--rose-l));
+  color: #fff; font-weight: 700; font-size: 0.8rem;
+  border: none; border-radius: 8px; cursor: pointer; transition: var(--trans);
+}
+.btn-add:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(224,67,122,0.35); }
+
+/* ===== PANELS ===== */
+.panel { display: none; padding: 24px 28px; animation: fadeUp 0.3s ease; }
+.panel.active { display: block; }
+
+/* ===== STATS ===== */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; margin-bottom: 28px; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px 18px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.stat-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.stat-icon { font-size: 1.5rem; margin-bottom: 10px; }
+.stat-num { font-family: 'Playfair Display', serif; font-size: 1.9rem; font-weight: 700; color: var(--rose); line-height: 1; }
+.stat-label { font-size: 0.7rem; color: var(--text-dim); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 5px; }
+
+/* ===== TABLES ===== */
+.table-wrap {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.table-toolbar {
+  padding: 14px 18px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.table-search {
+  flex: 1; min-width: 160px; padding: 8px 14px;
+  background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: 8px; color: var(--text);
+  font-family: 'DM Sans', sans-serif; font-size: 0.84rem; outline: none;
+}
+.table-search:focus { border-color: var(--rose); }
+.filter-select {
+  padding: 8px 12px; background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: 8px; color: var(--text); font-size: 0.84rem; cursor: pointer; outline: none;
+}
+.filter-select:focus { border-color: var(--rose); }
+table { width: 100%; border-collapse: collapse; }
+thead { background: rgba(224,67,122,0.05); }
+th {
+  padding: 12px 14px; text-align: left;
+  font-size: 0.68rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--rose); border-bottom: 1px solid var(--border);
+}
+td { padding: 11px 14px; border-bottom: 1px solid rgba(224,67,122,0.06); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(224,67,122,0.025); }
+.item-thumb { width: 42px; height: 42px; border-radius: 8px; object-fit: cover; background: #FFE0ED; }
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 50px; font-size: 0.63rem; font-weight: 700; letter-spacing: 0.04em;
+}
+.badge-bs { background: rgba(212,168,83,0.12); color: #B8892B; border: 1px solid rgba(212,168,83,0.3); }
+.badge-on { background: rgba(76,175,80,0.1); color: #4CAF50; border: 1px solid rgba(76,175,80,0.25); }
+.badge-off { background: rgba(224,82,82,0.08); color: var(--danger); border: 1px solid rgba(224,82,82,0.2); }
+.action-btns { display: flex; gap: 5px; }
+.btn-sm {
+  padding: 5px 11px; border-radius: 6px; font-size: 0.71rem; font-weight: 600;
+  cursor: pointer; border: none; transition: var(--trans); white-space: nowrap;
+}
+.btn-edit { background: rgba(224,67,122,0.08); color: var(--rose); }
+.btn-edit:hover { background: rgba(224,67,122,0.18); }
+.btn-toggle { background: rgba(224,67,122,0.05); color: var(--text-dim); }
+.btn-toggle:hover { background: rgba(224,67,122,0.12); color: var(--text); }
+.btn-delete { background: rgba(224,82,82,0.08); color: var(--danger); }
+.btn-delete:hover { background: rgba(224,82,82,0.22); }
+.no-results { text-align: center; color: var(--text-muted); padding: 32px; font-size: 0.85rem; }
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+  display: none; align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 32px;
+  width: 100%; max-width: 540px; max-height: 90vh; overflow-y: auto;
+  animation: modalIn 0.25s ease;
+}
+@keyframes modalIn { from { opacity:0; transform:scale(0.95) translateY(12px); } to { opacity:1; transform:scale(1) translateY(0); } }
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.modal-title { font-family: 'Playfair Display', serif; font-size: 1.3rem; color: var(--rose); }
+.modal-close {
+  background: rgba(224,67,122,0.08); border: none; color: var(--text-dim);
+  width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 1rem;
+  display: flex; align-items: center; justify-content: center; transition: var(--trans);
+}
+.modal-close:hover { background: rgba(224,82,82,0.15); color: var(--danger); }
+.modal-form { display: flex; flex-direction: column; gap: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+textarea.form-input { resize: vertical; min-height: 80px; }
+.img-preview { width: 100%; height: 160px; border-radius: 10px; object-fit: cover; display: none; border: 1px solid var(--border); margin-top: 6px; background: var(--bg); }
+.check-row { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem; color: var(--text-dim); }
+.check-row input[type=checkbox] { accent-color: var(--rose); width: 16px; height: 16px; cursor: pointer; }
+.modal-footer { display: flex; gap: 10px; margin-top: 8px; }
+.btn-cancel {
+  flex: 1; padding: 12px; background: transparent; border: 1.5px solid var(--border);
+  color: var(--text-dim); border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 0.85rem;
+  transition: var(--trans);
+}
+.btn-cancel:hover { background: var(--bg); border-color: var(--text-dim); }
+.btn-save {
+  flex: 2; padding: 12px; background: linear-gradient(135deg, var(--rose), var(--rose-l));
+  color: #fff; border: none; border-radius: 10px; cursor: pointer; font-weight: 700; font-size: 0.9rem;
+  transition: var(--trans); display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-save:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(224,67,122,0.35); }
+.btn-save:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+.input-hint { font-size: 0.72rem; color: var(--text-muted); }
+
+/* ===== CATEGORIES ===== */
+.cat-list { display: flex; flex-direction: column; gap: 10px; }
+.cat-row {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 18px;
+  transition: var(--trans);
+}
+.cat-row:hover { box-shadow: var(--shadow); }
+.cat-icon { font-size: 1.5rem; }
+.cat-name-edit {
+  flex: 1; border: none; background: transparent;
+  font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 600;
+  color: var(--text); outline: none; border-bottom: 1.5px solid transparent;
+  padding: 2px 0; transition: var(--trans);
+}
+.cat-name-edit:focus { border-bottom-color: var(--rose); }
+.cat-name-display { flex: 1; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 600; color: var(--text); }
+.cat-count { font-size: 0.78rem; color: var(--text-muted); }
+.cat-vis-toggle { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text-dim); cursor: pointer; }
+.cat-vis-toggle input { accent-color: var(--rose); }
+
+/* ===== ANALYTICS ===== */
+.chart-wrap {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px; margin-top: 24px;
+}
+.chart-title { font-weight: 700; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--rose); margin-bottom: 20px; }
+.a-bars { display: flex; align-items: flex-end; gap: 8px; height: 120px; }
+.a-col { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; }
+.a-bar {
+  width: 100%; min-height: 4px; max-height: 112px;
+  background: linear-gradient(to top, var(--rose-d), var(--rose-l));
+  border-radius: 4px 4px 0 0;
+  transition: height 0.5s ease;
+}
+.a-bar:hover { background: linear-gradient(to top, var(--rose), #fff); }
+.a-label { font-size: 0.7rem; color: var(--text-dim); }
+.a-num { font-size: 0.72rem; color: var(--rose); font-weight: 600; }
+
+/* ===== TRAFFIC SOURCES (where visitors came from) ===== */
+.traffic-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.traffic-icon { font-size: 1.2rem; width: 28px; text-align: center; flex-shrink: 0; }
+.traffic-label { font-size: 0.8rem; font-weight: 600; color: var(--text); width: 90px; flex-shrink: 0; text-transform: capitalize; }
+.traffic-bar-track { flex: 1; height: 10px; background: rgba(224,67,122,0.08); border-radius: 6px; overflow: hidden; }
+.traffic-bar-fill { height: 100%; border-radius: 6px; transition: width 1s ease; background: linear-gradient(90deg, var(--rose-l), var(--rose)); }
+.traffic-pct { font-size: 0.78rem; color: var(--text-dim); width: 44px; text-align: right; flex-shrink: 0; font-weight: 600; }
+.traffic-empty { text-align: center; color: var(--text-muted); padding: 24px; font-size: 0.85rem; }
+
+/* ===== SETTINGS ===== */
+.settings-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px; margin-bottom: 16px;
+}
+.settings-title { font-weight: 700; font-size: 0.88rem; color: var(--text); margin-bottom: 6px; }
+.settings-desc { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 18px; line-height: 1.5; }
+.settings-label { font-size: 0.72rem; font-weight: 700; color: var(--rose); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 6px; display: block; }
+.danger-zone { border-color: rgba(224,82,82,0.3); }
+.danger-zone .settings-title { color: var(--danger); }
+.btn-danger { padding: 10px 20px; background: rgba(224,82,82,0.1); border: 1.5px solid rgba(224,82,82,0.3); color: var(--danger); border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.85rem; transition: var(--trans); }
+.btn-danger:hover { background: rgba(224,82,82,0.2); }
+
+/* ===== QR ===== */
+.qr-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 32px;
+  text-align: center; max-width: 400px;
+}
+#qrCode { margin: 24px auto; width: 200px; height: 200px; }
+.qr-url {
+  font-size: 0.78rem; color: var(--text-dim); margin: 12px 0;
+  word-break: break-all; padding: 10px; background: var(--bg); border-radius: 8px;
+}
+.qr-actions { display: flex; gap: 10px; justify-content: center; margin-top: 16px; }
+.btn-outline {
+  padding: 9px 18px; background: transparent; border: 1.5px solid var(--border);
+  color: var(--text-dim); border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.82rem;
+  transition: var(--trans);
+}
+.btn-outline:hover { border-color: var(--rose); color: var(--rose); }
+
+/* ===== LOADER ===== */
+.panel-loader { text-align: center; padding: 60px; }
+.spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--rose); border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== TOAST ===== */
+.toast {
+  position: fixed; bottom: 28px; left: 50%;
+  transform: translateX(-50%) translateY(60px);
+  z-index: 999; background: #1a0a0e; border: 1px solid rgba(224,67,122,0.3);
+  color: #fff; padding: 11px 22px; border-radius: 50px;
+  font-size: 0.84rem; font-weight: 600; opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease; white-space: nowrap;
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+.toast.success { border-color: rgba(76,175,80,0.4); }
+.toast.error { border-color: rgba(224,82,82,0.5); background: #2a0808; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .sidebar { width: 56px; overflow: hidden; }
+  .sidebar-logo p, .nav-item span:not(.nav-icon), .sidebar-user, .btn-logout { display: none; }
+  .sidebar-logo h1 { display: none; }
+  .nav-item { justify-content: center; }
+  .main-header { padding: 12px 16px; }
+  .panel { padding: 16px; }
+  .form-row { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div id="loginScreen">
+  <div class="login-card">
+    <div class="login-logo"><span>Hola</span> Brownie</div>
+    <div class="login-sub">Admin Dashboard</div>
+    <div class="login-form">
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" type="email" id="loginEmail" placeholder="admin@holabrownie.in" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <div class="login-error" id="loginError"></div>
+      <button class="btn-primary" id="loginBtn">
+        <span id="loginBtnText">Sign In</span>
+      </button>
+    </div>
+    <p class="login-hint">🔒 Secured by Supabase Auth</p>
+  </div>
+</div>
+
+<!-- APP SHELL (hidden until login) -->
+<div id="appShell" style="display:none">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <h1> HB Admin</h1>
+      <p>Dashboard</p>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" onclick="showPanel('dashboard')">
+        <span class="nav-icon">📊</span> <span>Dashboard</span>
+      </button>
+      <button class="nav-item" onclick="showPanel('items')">
+        <span class="nav-icon">🍽</span> <span>Menu Items</span>
+      </button>
+      <button class="nav-item" onclick="showPanel('categories')">
+        <span class="nav-icon">🏷</span> <span>Categories</span>
+      </button>
+      <button class="nav-item" onclick="showPanel('analytics')">
+        <span class="nav-icon">📈</span> <span>Analytics</span>
+      </button>
+      <button class="nav-item" onclick="showPanel('qr')">
+        <span class="nav-icon">📱</span> <span>QR & Link</span>
+      </button>
+      <button class="nav-item" onclick="showPanel('settings')">
+        <span class="nav-icon">⚙️</span> <span>Settings</span>
+      </button>
+    </nav>
+    <div class="sidebar-user" id="sidebarUser">
+      <strong id="userEmail">—</strong>
+      Logged in
+    </div>
+    <div class="sidebar-footer">
+      <button class="btn-logout" onclick="doLogout()">🚪 Sign Out</button>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="main-header">
+      <h2 id="panelTitle">Dashboard</h2>
+      <div class="header-actions" id="headerActions">
+        <button class="btn-add" id="addItemBtn" onclick="openAddItem()" style="display:none">
+          ＋ Add Item
+        </button>
+        <button class="btn-add" id="addCatBtn" onclick="openAddCategory()" style="display:none">
+          ＋ Add Category
+        </button>
+      </div>
+    </div>
+
+    <!-- DASHBOARD PANEL -->
+    <div class="panel active" id="panel-dashboard">
+      <div class="stats-grid" id="dashStats">
+        <div class="panel-loader"><div class="spinner"></div></div>
+      </div>
+      <div class="table-wrap" id="dashRecentWrap" style="display:none">
+        <div class="table-toolbar" style="padding:16px 18px;font-weight:700;font-size:0.82rem;color:var(--rose);">Recent Items</div>
+        <table><thead><tr><th>Item</th><th>Category</th><th>Price</th><th>Status</th></tr></thead>
+        <tbody id="dashRecent"></tbody></table>
+      </div>
+    </div>
+
+    <!-- ITEMS PANEL -->
+    <div class="panel" id="panel-items">
+      <div class="table-wrap">
+        <div class="table-toolbar">
+          <input class="table-search" type="text" id="itemSearch" placeholder="Search items…" oninput="renderItemsTable()">
+          <select class="filter-select" id="itemCatFilter" onchange="renderItemsTable()">
+            <option value="">All Categories</option>
+          </select>
+        </div>
+        <table>
+          <thead><tr><th></th><th>Name</th><th>Category</th><th>Price</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="itemsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CATEGORIES PANEL -->
+    <div class="panel" id="panel-categories">
+      <div class="cat-list" id="catList"></div>
+    </div>
+
+    <!-- ANALYTICS PANEL -->
+    <div class="panel" id="panel-analytics">
+      <div class="stats-grid" id="analyticsStats"></div>
+      <div class="chart-wrap">
+        <div class="chart-title">Page Views — Last 7 Days</div>
+        <div class="a-bars" id="analyticsChart"></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-title">Where Visitors Came From</div>
+        <div id="trafficSources"><div class="panel-loader"><div class="spinner"></div></div></div>
+      </div>
+    </div>
+
+    <!-- QR PANEL -->
+    <div class="panel" id="panel-qr">
+      <div class="qr-card">
+        <div style="font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--rose);margin-bottom:6px">Menu QR Code</div>
+        <p style="font-size:0.83rem;color:var(--text-dim)">Share this QR code or URL with your customers.</p>
+        <div id="qrCode"></div>
+        <div class="qr-url" id="menuUrl">—</div>
+        <div class="qr-actions">
+          <button class="btn-outline" onclick="copyMenuUrl()">📋 Copy URL</button>
+          <button class="btn-outline" onclick="downloadQR()">⬇ Download QR</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS PANEL -->
+    <div class="panel" id="panel-settings">
+      <div class="settings-card">
+        <div class="settings-title">Change Password</div>
+        <div class="settings-desc">Update your admin password. You'll be signed in again after the change.</div>
+        <div style="display:flex;flex-direction:column;gap:12px;max-width:360px">
+          <div class="form-group">
+            <label class="settings-label">New Password</label>
+            <input class="form-input" type="password" id="newPass" placeholder="At least 8 characters" autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label class="settings-label">Confirm Password</label>
+            <input class="form-input" type="password" id="confirmPass" placeholder="Repeat password" autocomplete="new-password">
+          </div>
+          <button class="btn-primary" style="max-width:200px" onclick="changePassword()">Update Password</button>
+        </div>
+      </div>
+      <div class="settings-card danger-zone">
+        <div class="settings-title">⚠ Danger Zone</div>
+        <div class="settings-desc">Resetting the menu will restore all default items. This cannot be undone.</div>
+        <button class="btn-danger" onclick="confirmResetMenu()">Reset Menu to Defaults</button>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /appShell -->
+
+<!-- ITEM MODAL -->
+<div class="modal-overlay" id="itemModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">Add Item</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-form">
+      <input type="hidden" id="editItemId">
+      <div class="form-group">
+        <label class="form-label">Name *</label>
+        <input class="form-input" type="text" id="itemName" placeholder="e.g. Classic Fudge Brownie" maxlength="80">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea class="form-input" id="itemDesc" placeholder="Describe the item…" maxlength="300"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Price (₹) *</label>
+          <input class="form-input" type="number" id="itemPrice" placeholder="120" min="1" max="99999">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Category *</label>
+          <select class="form-input" id="itemCategory"></select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Image URL</label>
+        <input class="form-input" type="url" id="itemImg" placeholder="https://…" oninput="previewImg(this)">
+        <span class="input-hint">Use Unsplash or any direct image URL</span>
+        <img class="img-preview" id="imgPreview" alt="Preview" onerror="this.style.display='none'">
+      </div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap">
+        <label class="check-row">
+          <input type="checkbox" id="itemBestSeller"> Best Seller
+        </label>
+        <label class="check-row">
+          <input type="checkbox" id="itemVisible" checked> Visible on menu
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-save" id="saveBtn" onclick="saveItem()">
+          <span id="saveBtnText">Save Item</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- QR Code lib -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<script>
+// ===== SUPABASE CONFIG =====
+// Replace with your actual values - do NOT hardcode in production; use environment variables or a config file
+const SUPABASE_URL = 'https://gcjkmbwkztzpfbledjeg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdjamttYndrenR6cGZibGVkamVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMDkyMzAsImV4cCI6MjA5NjY4NTIzMH0.Ge2noXmmbBDt5PEPz1d_5lMJZoO5v0gSPAuQzh-YVS0';
+const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ===== STATE =====
+let currentPanel = 'dashboard';
+let allItems = [];
+let allCategories = [];
+let currentUser = null;
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  const btn   = document.getElementById('loginBtn');
+
+  if (!email || !pass) { showLoginError('Please enter email and password.'); return; }
+
+  btn.disabled = true;
+  document.getElementById('loginBtnText').textContent = 'Signing in\u2026';
+  document.getElementById('loginError').classList.remove('visible');
+
+  try {
+    const { data, error } = await sbClient.auth.signInWithPassword({ email, password: pass });
+    if (error) { showLoginError(error.message); return; }
+    currentUser = data.user;
+    showApp();
+  } catch(e) {
+    showLoginError('Network error: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    document.getElementById('loginBtnText').textContent = 'Sign In';
+  }
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('loginError');
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+
+async function doLogout() {
+  await sbClient.auth.signOut();
+}
+
+function showApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appShell').style.display = 'flex';
+  document.getElementById('userEmail').textContent = currentUser?.email || '';
+  loadAll();
+}
+
+function showLogin() {
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('appShell').style.display = 'none';
+}
+
+// ===== LOAD ALL DATA =====
+async function loadAll() {
+  const [catRes, itemRes] = await Promise.all([
+    sbClient.from('categories').select('*').order('name'),
+    sbClient.from('items').select('*').order('title')
+  ]);
+
+  allCategories = catRes.data || [];
+  allItems = itemRes.data || [];
+
+  renderDashboard();
+  populateCategorySelects();
+}
+
+// ===== PANELS =====
+function showPanel(id) {
+  currentPanel = id;
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  document.querySelector(`[onclick="showPanel('${id}')"]`).classList.add('active');
+
+  const titles = {
+    dashboard: 'Dashboard', items: 'Menu Items', categories: 'Categories',
+    analytics: 'Analytics', qr: 'QR Code & Link', settings: 'Settings'
+  };
+  document.getElementById('panelTitle').textContent = titles[id] || id;
+  document.getElementById('addItemBtn').style.display = id === 'items' ? 'flex' : 'none';
+  document.getElementById('addCatBtn').style.display = id === 'categories' ? 'flex' : 'none';
+
+  const renderers = {
+    dashboard: renderDashboard,
+    items: renderItemsTable,
+    categories: renderCategories,
+    analytics: renderAnalytics,
+    qr: renderQR,
+  };
+  if (renderers[id]) renderers[id]();
+}
+
+// ===== REALTIME SUBSCRIPTION =====
+// Listen for changes made by admin and reflect on menu immediately
+let realtimeChannel;
+function subscribeRealtime() {
+  if (realtimeChannel) sbClient.removeChannel(realtimeChannel);
+  realtimeChannel = sbClient.channel('admin-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'items' }, async () => {
+      const { data } = await sbClient.from('items').select('*').order('title');
+      allItems = data || [];
+      if (currentPanel === 'items') renderItemsTable();
+      if (currentPanel === 'dashboard') renderDashboard();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, async () => {
+      const { data } = await sbClient.from('categories').select('*').order('name');
+      allCategories = data || [];
+      if (currentPanel === 'categories') renderCategories();
+    })
+    .subscribe();
+}
+
+// ===== DASHBOARD =====
+function renderDashboard() {
+  const visible = allItems.filter(i => i.is_available).length;
+  const bs = allItems.filter(i => i.best_seller).length;
+
+  document.getElementById('dashStats').innerHTML = `
+    <div class="stat-card"><div class="stat-icon">🍽</div><div class="stat-num">${allItems.length}</div><div class="stat-label">Total Items</div></div>
+    <div class="stat-card"><div class="stat-icon">👁</div><div class="stat-num">${visible}</div><div class="stat-label">Visible</div></div>
+    <div class="stat-card"><div class="stat-icon">⭐</div><div class="stat-num">${bs}</div><div class="stat-label">Best Sellers</div></div>
+    <div class="stat-card"><div class="stat-icon">🏷</div><div class="stat-num">${allCategories.length}</div><div class="stat-label">Categories</div></div>
+  `;
+
+  const wrap = document.getElementById('dashRecentWrap');
+  const tbody = document.getElementById('dashRecent');
+  if (allItems.length) {
+    wrap.style.display = '';
+    tbody.innerHTML = allItems.slice(0, 6).map(item => {
+      const cat = allCategories.find(c => c.id === item.category_id);
+      return `<tr>
+        <td><img class="item-thumb" src="${esc(item.image_url)}" onerror="this.src='https://images.unsplash.com/photo-1607920591413-4ec007e70023?w=200&q=60'" alt=""></td>
+        <td style="font-weight:600">${esc(item.title)}</td>
+        <td style="color:var(--text-dim)">${cat ? cat.name : '—'}</td>
+        <td>₹${item.price}</td>
+        <td><span class="badge ${item.is_available ? 'badge-on' : 'badge-off'}">${item.is_available ? 'Visible' : 'Hidden'}</span></td>
+      </tr>`;
+    }).join('');
+  }
+}
+
+// ===== ITEMS TABLE =====
+function renderItemsTable() {
+  const q = (document.getElementById('itemSearch')?.value || '').toLowerCase();
+  const catF = document.getElementById('itemCatFilter')?.value || '';
+
+  let items = allItems;
+  if (q) items = items.filter(i => i.title.toLowerCase().includes(q) || (i.description || '').toLowerCase().includes(q));
+  if (catF) items = items.filter(i => i.category_id === catF);
+
+  document.getElementById('itemsBody').innerHTML = items.length ? items.map(item => {
+    const cat = allCategories.find(c => c.id === item.category_id);
+    return `<tr>
+      <td><img class="item-thumb" src="${esc(item.image_url)}" onerror="this.src='https://images.unsplash.com/photo-1607920591413-4ec007e70023?w=200&q=60'" alt=""></td>
+      <td>
+        <div style="font-weight:600;font-size:0.88rem">${esc(item.title)}</div>
+        ${item.best_seller ? '<span class="badge badge-bs">⭐ Best Seller</span>' : ''}
+      </td>
+      <td style="color:var(--text-dim)">${cat ? `${cat.icon || ''} ${cat.name}` : '—'}</td>
+      <td style="font-weight:600">₹${item.price}</td>
+      <td><span class="badge ${item.is_available ? 'badge-on' : 'badge-off'}">${item.is_available ? 'Visible' : 'Hidden'}</span></td>
+      <td>
+        <div class="action-btns">
+          <button class="btn-sm btn-edit" onclick="openEditItem('${item.id}')">✏ Edit</button>
+          <button class="btn-sm btn-toggle" onclick="toggleVisible('${item.id}')">${item.is_available ? '😶‍🌫 Hide' : '👁 Show'}</button>
+          <button class="btn-sm btn-delete" onclick="deleteItem('${item.id}')">🗑</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="6" class="no-results">No items found.</td></tr>`;
+}
+
+function populateCategorySelects() {
+  const sel = document.getElementById('itemCategory');
+  if (sel) sel.innerHTML = allCategories.map(c => `<option value="${c.id}">${c.icon || ''} ${c.name}</option>`).join('');
+
+  const filt = document.getElementById('itemCatFilter');
+  if (filt) {
+    filt.innerHTML = '<option value="">All Categories</option>' +
+      allCategories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  }
+}
+
+// ===== ITEM CRUD =====
+function openAddItem() {
+  document.getElementById('editItemId').value = '';
+  document.getElementById('modalTitle').textContent = 'Add Menu Item';
+  document.getElementById('itemName').value = '';
+  document.getElementById('itemDesc').value = '';
+  document.getElementById('itemPrice').value = '';
+  document.getElementById('itemImg').value = '';
+  document.getElementById('imgPreview').style.display = 'none';
+  document.getElementById('itemBestSeller').checked = false;
+  document.getElementById('itemVisible').checked = true;
+  populateCategorySelects();
+  document.getElementById('itemModal').classList.add('open');
+}
+
+function openEditItem(id) {
+  const item = allItems.find(i => i.id === id);
+  if (!item) return;
+  document.getElementById('editItemId').value = id;
+  document.getElementById('modalTitle').textContent = 'Edit Item';
+  document.getElementById('itemName').value = item.title;
+  document.getElementById('itemDesc').value = item.description || '';
+  document.getElementById('itemPrice').value = item.price;
+  document.getElementById('itemImg').value = item.image_url || '';
+  document.getElementById('itemBestSeller').checked = item.best_seller;
+  document.getElementById('itemVisible').checked = item.is_available;
+  const prev = document.getElementById('imgPreview');
+  if (item.image_url) { prev.src = item.image_url; prev.style.display = 'block'; } else { prev.style.display = 'none'; }
+  populateCategorySelects();
+  document.getElementById('itemCategory').value = item.category_id;
+  document.getElementById('itemModal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('itemModal').classList.remove('open'); }
+
+function previewImg(inp) {
+  const prev = document.getElementById('imgPreview');
+  if (inp.value) { prev.src = inp.value; prev.style.display = 'block'; }
+  else { prev.style.display = 'none'; }
+}
+
+async function saveItem() {
+  const id = document.getElementById('editItemId').value;
+  const name = document.getElementById('itemName').value.trim();
+  const price = parseFloat(document.getElementById('itemPrice').value);
+  const category = document.getElementById('itemCategory').value;
+
+  if (!name) { showToast('Name is required', 'error'); return; }
+  if (!price || price < 1) { showToast('Valid price is required', 'error'); return; }
+  if (!category) { showToast('Category is required', 'error'); return; }
+
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true;
+  document.getElementById('saveBtnText').textContent = 'Saving…';
+
+  const payload = {
+    title: name,
+    price,
+    category_id: category,
+    description: document.getElementById('itemDesc').value.trim(),
+    image_url: document.getElementById('itemImg').value.trim() || 'https://images.unsplash.com/photo-1607920591413-4ec007e70023?w=400&q=80',
+    best_seller: document.getElementById('itemBestSeller').checked,
+    is_available: document.getElementById('itemVisible').checked,
+  };
+
+  let error;
+  if (id) {
+    ({ error } = await sbClient.from('items').update(payload).eq('id', id));
+  } else {
+    ({ error } = await sbClient.from('items').insert([payload]));
+  }
+
+  btn.disabled = false;
+  document.getElementById('saveBtnText').textContent = 'Save Item';
+
+  if (error) { showToast('Save failed: ' + error.message, 'error'); return; }
+
+  closeModal();
+  const { data } = await sbClient.from('items').select('*').order('title');
+  allItems = data || [];
+  renderItemsTable();
+  renderDashboard();
+  showToast(id ? 'Item updated ✓' : 'Item added ✓', 'success');
+}
+
+async function toggleVisible(id) {
+  const item = allItems.find(i => i.id === id);
+  if (!item) return;
+  const { error } = await sbClient.from('items').update({ is_available: !item.is_available }).eq('id', id);
+  if (error) { showToast('Failed to update', 'error'); return; }
+  item.is_available = !item.is_available;
+  renderItemsTable();
+  showToast(item.is_available ? 'Item shown ✓' : 'Item hidden', 'success');
+}
+
+async function deleteItem(id) {
+  const item = allItems.find(i => i.id === id);
+  if (!confirm(`Delete "${item?.title}"? This cannot be undone.`)) return;
+  const { error } = await sbClient.from('items').delete().eq('id', id);
+  if (error) { showToast('Delete failed', 'error'); return; }
+  allItems = allItems.filter(i => i.id !== id);
+  renderItemsTable();
+  renderDashboard();
+  showToast('Item deleted', 'error');
+}
+
+// ===== CATEGORIES =====
+function renderCategories() {
+  document.getElementById('catList').innerHTML = allCategories.map(cat => {
+    const count = allItems.filter(i => i.category_id === cat.id).length;
+    return `
+    <div class="cat-row">
+      <span class="cat-icon">${cat.icon || '🍽'}</span>
+      <span class="cat-name-display">${esc(cat.name)}</span>
+      <span class="cat-count">${count} item${count !== 1 ? 's' : ''}</span>
+      <label class="cat-vis-toggle">
+        <input type="checkbox" ${cat.visible ? 'checked' : ''}
+          onchange="updateCategoryVisible('${cat.id}', this.checked)">
+        Visible
+      </label>
+      <button class="btn-sm btn-delete" onclick="deleteCategory('${cat.id}', '${esc(cat.name)}')">🗑</button>
+    </div>`;
+  }).join('');
+}
+
+async function updateCategoryName(id, name) {
+  if (!name.trim()) return;
+  const { error } = await sbClient.from('categories').update({ name: name.trim() }).eq('id', id);
+  if (!error) {
+    const cat = allCategories.find(c => c.id === id);
+    if (cat) cat.name = name.trim();
+    showToast('Category updated ✓', 'success');
+  }
+}
+
+async function updateCategoryVisible(id, visible) {
+  const { error } = await sbClient.from('categories').update({ visible }).eq('id', id);
+  if (!error) {
+    const cat = allCategories.find(c => c.id === id);
+    if (cat) cat.visible = visible;
+    showToast('Saved ✓', 'success');
+  }
+}
+
+async function deleteCategory(id, name) {
+  const count = allItems.filter(i => i.category_id === id).length;
+  const warn = count > 0 ? ` It has ${count} item(s) — those items will have no category.` : '';
+  if (!confirm(`Delete category "${name}"?${warn} This cannot be undone.`)) return;
+  const { error } = await sbClient.from('categories').delete().eq('id', id);
+  if (error) { showToast('Delete failed: ' + error.message, 'error'); return; }
+  allCategories = allCategories.filter(c => c.id !== id);
+  renderCategories();
+  populateCategorySelects();
+  showToast('Category deleted', 'success');
+}
+
+function openAddCategory() {
+  const name = prompt('Category name:');
+  if (!name || !name.trim()) return;
+  const icon = prompt('Emoji icon (optional, e.g. 🍰):') || '🍽';
+  addCategory(name.trim(), icon.trim());
+}
+
+async function addCategory(name, icon) {
+  const { data, error } = await sbClient
+    .from('categories')
+    .insert([{ name, icon, visible: true }])
+    .select()
+    .single();
+  if (error) { showToast('Failed to add: ' + error.message, 'error'); return; }
+  allCategories.push(data);
+  allCategories.sort((a, b) => a.name.localeCompare(b.name));
+  renderCategories();
+  populateCategorySelects();
+  showToast(`"${name}" added ✓`, 'success');
+}
+
+// ===== ANALYTICS =====
+async function renderAnalytics() {
+  const { data } = await sbClient
+    .from('page_views')
+    .select('viewed_at')
+    .order('viewed_at', { ascending: false });
+
+  const views = data || [];
+  const today = new Date().toISOString().split('T')[0];
+  const todayCount = views.filter(v => v.viewed_at.startsWith(today)).length;
+
+  // Last 7 days
+  const days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const key = d.toISOString().split('T')[0];
+    const count = views.filter(v => v.viewed_at.startsWith(key)).length;
+    days.push({ label: d.toLocaleDateString('en', { weekday: 'short' }), count });
+  }
+  const maxVal = Math.max(...days.map(d => d.count), 1);
+
+  document.getElementById('analyticsStats').innerHTML = `
+    <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-num">${views.length}</div><div class="stat-label">Total Views</div></div>
+    <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-num">${todayCount}</div><div class="stat-label">Today</div></div>
+    <div class="stat-card"><div class="stat-icon">📈</div><div class="stat-num">${Math.max(...days.map(d => d.count))}</div><div class="stat-label">Best Day (7d)</div></div>
+  `;
+
+  document.getElementById('analyticsChart').innerHTML = days.map(d => `
+    <div class="a-col">
+      <span class="a-num">${d.count}</span>
+      <div class="a-bar" style="height:${Math.round((d.count / maxVal) * 100) + 4}px" title="${d.count} views"></div>
+      <span class="a-label">${d.label}</span>
+    </div>
+  `).join('');
+
+  renderTrafficSources();
+}
+
+// ===== WHERE VISITORS CAME FROM =====
+async function renderTrafficSources() {
+  const container = document.getElementById('trafficSources');
+  try {
+    const { data, error } = await sbClient
+      .from('traffic_sources')
+      .select('source')
+      .order('visited_at', { ascending: false })
+      .limit(2000);
+    if (error) throw error;
+
+    const rows = data || [];
+    if (!rows.length) {
+      container.innerHTML = `<div class="traffic-empty">No visitor source data yet.</div>`;
+      return;
+    }
+
+    const counts = {};
+    rows.forEach(r => {
+      const s = (r.source || 'direct').toLowerCase();
+      counts[s] = (counts[s] || 0) + 1;
+    });
+
+    const ICONS = {
+      whatsapp: '💬', instagram: '📸', facebook: '📘',
+      google: '🔍', direct: '🔗'
+    };
+
+    const total = rows.length;
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 6);
+
+    container.innerHTML = sorted.map(([source, count]) => {
+      const pct = Math.round((count / total) * 100);
+      const icon = ICONS[source] || '🌐';
+      const label = source === 'direct' ? 'direct / chrome' : source;
+      return `
+        <div class="traffic-row">
+          <span class="traffic-icon">${icon}</span>
+          <span class="traffic-label">${esc(label)}</span>
+          <div class="traffic-bar-track"><div class="traffic-bar-fill" style="width:${pct}%"></div></div>
+          <span class="traffic-pct">${pct}%</span>
+        </div>`;
+    }).join('');
+  } catch (err) {
+    console.error('Traffic sources error:', err);
+    container.innerHTML = `<div class="traffic-empty">Couldn't load visitor sources. Make sure the <code>traffic_sources</code> table exists.</div>`;
+  }
+}
+
+// ===== QR =====
+function renderQR() {
+  const url = window.location.origin + '/';
+  document.getElementById('menuUrl').textContent = url;
+  const el = document.getElementById('qrCode');
+  el.innerHTML = '';
+  if (window.QRCode) {
+    new QRCode(el, { text: url, width: 200, height: 200, colorDark: '#E0437A', colorLight: '#FFFFFF' });
+  }
+}
+
+function copyMenuUrl() {
+  navigator.clipboard.writeText(document.getElementById('menuUrl').textContent)
+    .then(() => showToast('URL copied ✓', 'success'));
+}
+
+function downloadQR() {
+  const canvas = document.querySelector('#qrCode canvas');
+  if (!canvas) return showToast('QR not ready', 'error');
+  const a = document.createElement('a');
+  a.download = 'hola-brownie-qr.png';
+  a.href = canvas.toDataURL();
+  a.click();
+  showToast('QR downloaded ✓', 'success');
+}
+
+// ===== SETTINGS =====
+async function changePassword() {
+  const np = document.getElementById('newPass').value;
+  const cp = document.getElementById('confirmPass').value;
+  if (!np || np.length < 8) { showToast('Password must be at least 8 characters', 'error'); return; }
+  if (np !== cp) { showToast('Passwords do not match', 'error'); return; }
+
+  const { error } = await sbClient.auth.updateUser({ password: np });
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+
+  document.getElementById('newPass').value = '';
+  document.getElementById('confirmPass').value = '';
+  showToast('Password updated ✓', 'success');
+}
+
+async function confirmResetMenu() {
+  if (!confirm('This will delete ALL current items and restore defaults. Are you absolutely sure?')) return;
+  if (!confirm('Last chance: this cannot be undone!')) return;
+  showToast('Resetting menu…');
+  // Call a Supabase Edge Function or RPC to reset safely
+  const { error } = await sbClient.rpc('reset_menu_to_defaults');
+  if (error) { showToast('Reset failed: ' + error.message, 'error'); return; }
+  await loadAll();
+  showToast('Menu reset to defaults ✓', 'success');
+}
+
+// ===== MODAL CLOSE ON BACKDROP =====
+document.getElementById('itemModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ===== TOAST =====
+let toastTimer;
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ===== UTILS =====
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Init realtime on load
+subscribeRealtime();
+
+// ===== AUTH INIT (runs after all functions are defined) =====
+sbClient.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_OUT') { currentUser = null; showLogin(); }
+});
+
+(async () => {
+  const { data: { session } } = await sbClient.auth.getSession();
+  if (session) { currentUser = session.user; showApp(); }
+})();
+
+// Bind login button via addEventListener (more reliable than inline onclick)
+document.addEventListener('DOMContentLoaded', () => {
+  const loginBtn = document.getElementById('loginBtn');
+  if (loginBtn) loginBtn.addEventListener('click', doLogin);
+
+  const loginPass = document.getElementById('loginPass');
+  if (loginPass) loginPass.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') doLogin();
+  });
+});
+</script>
+</body>
+</html>
