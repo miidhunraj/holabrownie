@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hola Brownie | Made to Make You Melt</title>
+  <meta name="description" content="Handcrafted, small-batch brownies baked with 70% single-origin dark chocolate. Premium boxes, custom builds, delivered fresh.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,400..600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- LOADING SCREEN -->
+  <div id="loadingScreen" class="loading-screen">
+    <div class="loader-content">
+      <img class="loader-logo-image" src="assets/hola-brownie-logo.svg" alt="Hola Brownie" data-logo>
+      <div class="loader-box loader-logo-fallback" aria-hidden="true">HB</div>
+    </div>
+    <div class="loader-brand">Hola <em>Brownie</em></div>
+    <div class="loader-bar-wrap">
+      <div class="loader-bar-fill"></div>
+    </div>
+  </div>
+
+  <!-- AMBIENT CURSOR GLOW -->
+  <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
+
+  <!-- NAVBAR -->
+  <nav id="navbar" class="navbar">
+    <div class="nav-container">
+      <a href="#hero" class="nav-brand brand-lockup" aria-label="Hola Brownie home"><img class="brand-logo-image" src="assets/hola-brownie-logo.svg" alt="Hola Brownie" data-logo><span class="brand-logo-fallback" aria-hidden="true"><b>H</b><i>B</i></span><span class="brand-wordmark">Hola <em>Brownie</em></span></a>
+
+      <ul class="nav-links">
+        <li><a href="#hero">Home</a></li>
+        <li><a href="#menu">Menu</a></li>
+        <li><a href="#moods">Vibe</a></li>
+        <li><a href="#builder">Build a Box</a></li>
+        <li><a href="#story">Story</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <button class="icon-btn" id="openSearchBtn" aria-label="Search brownies"><i class="ph ph-magnifying-glass"></i></button>
+        <button class="icon-btn cart-btn" id="openCartBtn" aria-label="Open cart">
+          <i class="ph ph-shopping-bag"></i>
+          <span class="cart-badge" id="cartCountBadge">0</span>
+        </button>
+        <button class="icon-btn mobile-toggle" id="mobileMenuBtn" aria-label="Open navigation"><i class="ph ph-list"></i></button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MOBILE MENU -->
+  <div class="mobile-menu" id="mobileMenu">
+    <ul>
+      <li><a href="#hero">Home</a></li>
+      <li><a href="#menu">Menu</a></li>
+      <li><a href="#moods">Choose Mood</a></li>
+      <li><a href="#builder">Build a Box</a></li>
+      <li><a href="#story">Our Story</a></li>
+    </ul>
+  </div>
+
+  <main>
+    <!-- HERO -->
+    <section id="hero" class="hero">
+      <div class="hero-bg-overlay"></div>
+
+      <div class="hero-content">
+        <span class="eyebrow">Handcrafted with love</span>
+        <h1 class="hero-title">Made to <br><em>Make You Melt.</em></h1>
+        <p class="hero-subtitle">Experience the richest, fudgiest brownies baked to order. The perfect balance of
+          premium cocoa and irresistible texture.</p>
+
+        <div class="hero-cta-group">
+          <a href="#menu" class="btn btn-primary">Explore Menu</a>
+          <a href="#story" class="btn btn-outline">Our Recipe <i class="ph ph-caret-right"></i></a>
+        </div>
+      </div>
+
+      <!-- Floating decorative elements -->
+      <div class="float-el float-1">
+        <span class="float-gem" aria-hidden="true"></span>
+        <div class="float-text">
+          <span class="ft-top">Premium</span>
+          <span class="ft-bot">Dark Cocoa</span>
+        </div>
+      </div>
+      <div class="float-el float-2">
+        <span class="float-gem float-gem-light" aria-hidden="true"></span>
+        <div class="float-text">
+          <span class="ft-top">Baked Daily</span>
+          <span class="ft-bot">Fresh Batches</span>
+        </div>
+      </div>
+
+      <div class="scroll-hint">
+        <span>Scroll</span>
+        <div class="scroll-line">
+          <div class="scroll-dot"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SIGNATURE PRODUCTS -->
+    <section id="menu" class="featured-section">
+      <div class="section-container">
+        <div class="section-header reveal">
+          <div>
+            <span class="section-eyebrow">Our Signatures</span>
+            <h2 class="section-title">Featured <em>Brownies</em></h2>
+            <p class="section-desc">Handpicked favorites from our oven to your door. Indulge in our most loved,
+              perfectly baked creations.</p>
+          </div>
+          <button class="btn btn-secondary desktop-only" onclick="viewFullMenu()">View Full Menu</button>
+        </div>
+
+        <div class="product-grid" id="featuredGrid">
+          <!-- Populated by JS -->
+        </div>
+
+        <button class="btn btn-secondary mobile-only full-width mt-12" onclick="viewFullMenu()">View Full Menu</button>
+      </div>
+    </section>
+
+    <!-- CHOOSE YOUR MOOD -->
+    <section id="moods" class="moods-section">
+      <div class="mood-blob"></div>
+      <div class="section-container relative z-10">
+        <div class="section-header text-center mx-auto reveal">
+          <h2 class="section-title">Choose Your <em>Mood</em></h2>
+          <p class="section-desc text-center">Not sure what you want? Let how you feel guide your sweet cravings today.
+          </p>
+        </div>
+
+        <div class="mood-pills" id="moodPillContainer">
+          <!-- Populated by JS -->
+        </div>
+
+        <div class="product-grid" id="moodGrid">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- FRESH FROM OVEN / STORY -->
+    <section id="story" class="story-section">
+      <div class="texture-overlay"></div>
+
+      <div class="section-container h-flex">
+
+        <div class="story-visual" id="storyVisual">
+          <div class="baking-tray">
+            <div class="steam steam-1"></div>
+            <div class="steam steam-2"></div>
+
+            <div class="tray-grid">
+              <div class="brownie-piece"></div>
+              <div class="brownie-piece"></div>
+              <div class="brownie-piece"></div>
+              <div class="brownie-piece"></div>
+              <div class="brownie-piece"></div>
+              <div class="brownie-piece"></div>
+              <div class="brownie-piece"></div>
+              <div class="brownie-piece"></div>
+              <div class="brownie-piece"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="story-content reveal">
+          <span class="section-eyebrow text-mid">Our Secret</span>
+          <h2 class="section-title text-white">Fresh From <br><em class="text-mid">The Oven.</em></h2>
+          <p class="section-desc text-white-muted">
+            Every batch is hand-mixed with 70% dark single-origin chocolate, pure organic butter, and absolute devotion.
+            We bake in small quantities so that whenever you order, you're experiencing maximum flavor and the perfect
+            melt.
+          </p>
+
+          <div class="stats-row">
+            <div class="stat-item">
+              <strong>#1</strong>
+              <span>Premium Cocoa</span>
+            </div>
+            <div class="stat-item">
+              <strong>100%</strong>
+              <span>Handcrafted</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- BROWNIE BUILDER -->
+    <section id="builder" class="builder-section">
+      <div class="section-container">
+        <div class="section-header text-center mx-auto reveal">
+          <span class="section-eyebrow">Make It Yours</span>
+          <h2 class="section-title">Build Your <br><em>Brownie Box</em></h2>
+        </div>
+
+        <div class="builder-layout">
+          <!-- Left: Selections -->
+          <div class="builder-controls">
+
+            <div class="builder-step">
+              <h3><span class="step-num">1</span> Choose Box Size</h3>
+              <div class="size-grid">
+                <button class="size-btn active" data-size="4">
+                  <strong>4</strong>
+                  <span>Brownies</span>
+                </button>
+                <button class="size-btn" data-size="6">
+                  <strong>6</strong>
+                  <span>Brownies</span>
+                </button>
+                <button class="size-btn" data-size="9">
+                  <strong>9</strong>
+                  <span>Brownies</span>
+                </button>
+                <button class="size-btn" data-size="12">
+                  <strong>12</strong>
+                  <span>Brownies</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="builder-step">
+              <div class="step-header">
+                <h3><span class="step-num">2</span> Select Flavors</h3>
+                <span class="selection-count" id="builderCountBadge">0 / 4 Selected</span>
+              </div>
+              <div class="flavor-list" id="builderFlavors">
+                <!-- JS populated -->
+              </div>
+            </div>
+
+            <div class="builder-step" style="margin-bottom:0">
+              <h3><span class="step-num">3</span> Optional Gift Note</h3>
+              <textarea class="gift-note" placeholder="Write a sweet message..."></textarea>
+            </div>
+          </div>
+
+          <!-- Right: Summary -->
+          <div class="builder-summary-col">
+            <div class="summary-card">
+              <div class="summary-header">
+                <h4>Your Custom Box</h4>
+                <p>Pack of <span id="summarySizeLabel">4</span> Premium Brownies</p>
+              </div>
+
+              <div class="summary-body" id="summaryList">
+                <div class="empty-summary">
+                  <i class="ph ph-plus-circle"></i>
+                  <p>Select flavors to fill your box</p>
+                </div>
+              </div>
+
+              <div class="summary-footer">
+                <div class="summary-total-row">
+                  <span>Total Price</span>
+                  <strong id="summaryPrice">₹600</strong>
+                </div>
+                <button class="btn btn-primary full-width" id="addBoxToCartBtn" disabled>
+                  <i class="ph ph-check"></i> Add to Cart
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- REVIEWS -->
+    <section class="reviews-section">
+      <div class="section-container relative z-10">
+        <div class="section-header text-center mx-auto mb-16 reveal">
+          <h2 class="section-title">Sweet <em>Praise</em></h2>
+        </div>
+
+        <div class="review-grid" id="reviewGrid">
+          <!-- JS populated -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <section class="gallery-section" id="gallery">
+    <div class="section-container">
+      <div class="section-header reveal">
+        <div>
+          <span class="section-eyebrow">From our kitchen</span>
+          <h2 class="section-title">A little look at <em>the good stuff.</em></h2>
+        </div>
+        <p class="section-desc">Tap a moment to take a closer look.</p>
+      </div>
+      <div class="gallery-grid" id="galleryGrid">
+        <button class="gallery-tile tile-tall" data-image="https://images.unsplash.com/photo-1606312619070-d48b4c652a52?w=1200&q=85" aria-label="View chocolate brownie"><img src="https://images.unsplash.com/photo-1606312619070-d48b4c652a52?w=900&q=80" alt="A rich chocolate brownie"></button>
+        <button class="gallery-tile" data-image="https://images.unsplash.com/photo-1515037028865-0a2a82603f7c?w=1200&q=85" aria-label="View brownie batch"><img src="https://images.unsplash.com/photo-1515037028865-0a2a82603f7c?w=900&q=80" alt="Freshly baked brownie batch"></button>
+        <button class="gallery-tile" data-image="https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=1200&q=85" aria-label="View chocolate dessert"><img src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=900&q=80" alt="Chocolate dessert detail"></button>
+      </div>
+    </div>
+  </section>
+
+  <section class="experience-band" aria-label="Hola Brownie promises">
+    <p>BAKED IN SMALL BATCHES <span>✦</span> PREMIUM COCOA <span>✦</span> MADE FOR SHARING <span>✦</span> BAKED IN SMALL BATCHES <span>✦</span> PREMIUM COCOA <span>✦</span> MADE FOR SHARING <span>✦</span></p>
+  </section>
+
+  <section class="ingredient-section" id="ingredients">
+    <div class="section-container ingredient-layout">
+      <div class="reveal"><span class="section-eyebrow">The good stuff</span><h2 class="section-title">Every bite starts <em>with care.</em></h2></div>
+      <div class="ingredient-list reveal"><article><b>70%</b><span>single-origin dark chocolate</span></article><article><b>01</b><span>small batch at a time</span></article><article><b>0</b><span>shortcuts in our kitchen</span></article></div>
+    </div>
+  </section>
+
+  <section class="club-section" id="club">
+    <div class="section-container club-card reveal"><div><span class="section-eyebrow">A little extra sweetness</span><h2 class="section-title">Hola Brownie <em>Club</em></h2><p>Birthday treats, early access and first dibs on limited batches. Coming soon.</p></div><span class="club-stamp">HB<br><small>CLUB</small></span></div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-bg-blobs"></div>
+    <div class="section-container relative z-10">
+
+      <div class="footer-grid">
+        <div class="footer-brand-col">
+          <a href="#hero" class="nav-brand brand-lockup mb-6"><img class="brand-logo-image" src="assets/hola-brownie-logo.svg" alt="Hola Brownie" data-logo><span class="brand-logo-fallback" aria-hidden="true"><b>H</b><i>B</i></span><span class="brand-wordmark">Hola <em>Brownie</em></span></a>
+          <p class="footer-desc">Handcrafted brownies, cakes, and desserts baked with love, premium ingredients, and a
+            dash of magic. Made to make you melt.</p>
+          <div class="social-links">
+            <a href="#" aria-label="Instagram"><i class="ph ph-instagram-logo"></i></a>
+            <a href="#" aria-label="Facebook"><i class="ph ph-facebook-logo"></i></a>
+            <a href="#" aria-label="Twitter"><i class="ph ph-twitter-logo"></i></a>
+          </div>
+        </div>
+
+        <div class="footer-links-col">
+          <h4>Explore</h4>
+          <ul>
+            <li><a href="#hero">Home</a></li>
+            <li><a href="#menu">Our Menu</a></li>
+            <li><a href="#builder">Build a Box</a></li>
+            <li><a href="#story">About Us</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-contact-col">
+          <h4>Visit Us</h4>
+          <address>
+            <p>📍 Mangaluru, India<br>(Delivery Available)</p>
+            <p>📞 +91 98765 43210</p>
+            <p>✉️ hello@holabrownie.com</p>
+          </address>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2026 Hola Brownie. All rights reserved.</p>
+        <div class="footer-legal">
+          <a href="#">Privacy</a>
+          <a href="#">Terms</a>
+        </div>
+      </div>
+
+    </div>
+  </footer>
+
+  <!-- PRODUCT QUICK VIEW MODAL -->
+  <div class="modal-overlay" id="productModal">
+    <div class="modal-card">
+      <button class="close-btn" id="closeModalBtn"><i class="ph ph-x"></i></button>
+
+      <div class="modal-h-flex">
+        <div class="modal-img-col">
+          <img src="" alt="" id="modalImg">
+          <span class="badge" id="modalBadge" style="display: none;"></span>
+        </div>
+
+        <div class="modal-content-col">
+          <div class="modal-stars" id="modalStars">★★★★★ (124 reviews)</div>
+          <p class="modal-cat" id="modalCat">Category</p>
+          <h2 class="modal-title" id="modalTitle">Product Name</h2>
+          <p class="modal-desc" id="modalDesc">Description goes here...</p>
+
+          <div class="modal-ingredients">
+            <h4>Ingredients</h4>
+            <div class="ing-tags" id="modalIngredients"></div>
+          </div>
+
+          <div class="modal-action-area">
+            <div class="price-row">
+              <strong id="modalPrice">₹0</strong>
+              <span>per item</span>
+            </div>
+
+            <div class="action-row">
+              <div class="qty-control">
+                <button id="modalQtyDec"><i class="ph ph-minus"></i></button>
+                <span id="modalQtyVal">1</span>
+                <button id="modalQtyInc"><i class="ph ph-plus"></i></button>
+              </div>
+              <button class="btn btn-primary no-shrink" id="modalAddToCart">
+                <i class="ph ph-shopping-bag"></i> Add to Box
+              </button>
+              <button class="wishlist-btn"><i class="ph ph-heart"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CART DRAWER -->
+  <div class="cart-overlay" id="cartDrawerOverlay">
+    <div class="cart-drawer" id="cartDrawer">
+
+      <div class="cart-header">
+        <h2><i class="ph ph-shopping-bag"></i> Your Box</h2>
+        <button class="close-btn" id="closeCartBtn"><i class="ph ph-x"></i></button>
+      </div>
+
+      <div class="cart-items" id="cartItemsList">
+        <!-- JS populated -->
+      </div>
+
+      <div class="cart-footer">
+        <div class="cart-totals">
+          <div class="total-row">
+            <span>Subtotal</span>
+            <span id="cartSubtotal">₹0</span>
+          </div>
+          <div class="total-row">
+            <span>Delivery</span>
+            <span>₹50</span>
+          </div>
+          <hr>
+          <div class="total-row grand-total">
+            <span>Total</span>
+            <strong id="cartTotal">₹0</strong>
+          </div>
+        </div>
+
+        <button class="btn btn-primary full-width cart-checkout-btn">
+          Order on WhatsApp <i class="ph ph-whatsapp-logo"></i>
+        </button>
+        <p class="delivery-notice"><span class="dot"></span> Delivery usually within 45 mins.</p>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="search-overlay" id="searchOverlay" role="dialog" aria-modal="true" aria-label="Search brownies" hidden>
+    <div class="search-panel"><button class="close-btn" id="closeSearchBtn" aria-label="Close search"><i class="ph ph-x"></i></button><span class="section-eyebrow">Find your favourite</span><label class="sr-only" for="productSearch">Search the menu</label><input id="productSearch" type="search" placeholder="Search brownies, flavours, boxes…" autocomplete="off"><div id="searchResults" class="search-results"></div></div>
+  </div>
+
+  <div class="site-toast" id="siteToast" role="status" aria-live="polite"></div>
+  <div class="lightbox" id="galleryLightbox" hidden role="dialog" aria-modal="true" aria-label="Gallery image"><button class="close-btn" id="closeLightbox" aria-label="Close image"><i class="ph ph-x"></i></button><img id="lightboxImage" alt="Selected Hola Brownie gallery image"></div>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
