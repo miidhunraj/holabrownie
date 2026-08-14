@@ -1,566 +1,575 @@
-// ============================================================
-// HOLA BROWNIE — THE MENU
-// Standalone page. Same Supabase project & WhatsApp number as
-// the main site — this is a read-view on the same live data,
-// not a second product database.
-// ============================================================
-
+// SUPABASE
 const SUPABASE_URL = 'https://gcjkmbwkztzpfbledjeg.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdjamttYndrenR6cGZibGVkamVnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODExMDkyMzAsImV4cCI6MjA5NjY4NTIzMH0.Ge2noXmmbBDt5PEPz1d_5lMJZoO5v0gSPAuQzh-YVS0';
-const WHATSAPP_NUMBER = '917902770041'; // same destination used on index.html
-const CART_KEY = 'hola-brownie-cart-v2'; // shared with index.html's cart — one order, either page
+const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// MOCK DATA FALLBACKS (Supabase takes priority for products)
+let products = [];
+let dbCategories = [];
 
-// ---- STATE ----
-let rawItems = [];        // every item, available or not
-let categories = [];      // categories table rows
+const reviews = [
+  { id: 1, name: 'Sarah M.', rating: 5, text: "Literally the best brownies I've ever had in my life. The crackly top is to die for!", productName: 'Classic Fudge Brownie', avatar: 'S' },
+  { id: 2, name: 'Rahul K.', rating: 5, text: "Ordered the gift box for my wife's birthday. The packaging was premium and taste was out of this world.", productName: 'Hola Brownie Box', avatar: 'R' },
+  { id: 3, name: 'Ananya P.', rating: 4, text: "The salted caramel one is my absolute favorite. Perfectly balanced and not overly sweet.", productName: 'Salted Caramel Swirl', avatar: 'A' }
+];
+
+const moods = [
+  { id: 'craving', label: 'Chocolate Craving' },
+  { id: 'sweet', label: 'Something Sweet' },
+  { id: 'gift', label: 'Gift for Someone' },
+  { id: 'latenight', label: 'Late Night Treat' },
+  { id: 'party', label: 'Party Box' },
+  { id: 'indulgence', label: 'Premium Indulgence' }
+];
+
+// STATE
 let cart = [];
-let activeCategory = 'all';
-let activePriceBucket = null; // { min, max } or null
-let searchQuery = '';
-let sortMode = 'recommended';
-let priceBuckets = [];
+let activeMood = 'craving';
 
-let detailItem = null;
-let detailQty = 1;
-
-// ============================================================
 // INIT
-// ============================================================
-document.addEventListener('DOMContentLoaded', init);
+async function runInit() {
+  await fetchSupabaseData();
+  logAnalytics();
 
-async function init() {
-  loadCartFromStorage();
-  updateOrderUI();
-  wireStaticEvents();
-
-  try {
-    await fetchData();
-    if (!rawItems.length) {
-      renderEmptyMenuShell('Our menu is taking a little break.', 'Please check back soon.');
-    } else {
-      buildPriceBuckets();
-      renderCategoryNav();
-      renderPriceFilter();
-      renderStats();
-      renderSignature();
-      renderCravingChips();
-      applyFiltersAndRender();
-    }
-  } catch (err) {
-    console.warn('Menu data failed to load:', err);
-    renderFatalError();
-  } finally {
-    document.getElementById('mainContent').setAttribute('aria-busy', 'false');
-    hideLoader();
-  }
-
-  initRevealObserver();
+  initLoadingScreen();
+  initNavbar();
+  renderFeaturedProducts();
+  renderMoods();
+  renderMoodProducts();
+  initFreshFromOven();
+  renderReviews();
+  initCart();
+  initPremiumInteractions();
 }
 
-function hideLoader() {
-  const loader = document.getElementById('menuLoader');
+async function fetchSupabaseData() {
+  try {
+    const { data: items } = await sbClient.from('items').select('*').eq('is_available', true).order('title');
+    const { data: cats } = await sbClient.from('categories').select('*').order('name');
+
+    if (cats) dbCategories = cats;
+    if (items) {
+      products = items.map(dbItem => {
+        const badge = dbItem.best_seller ? 'Bestseller' : '';
+        const catInfo = dbCategories.find(c => c.id === dbItem.category_id);
+        return {
+          id: dbItem.id,
+          name: dbItem.title,
+          desc: dbItem.description || '',
+          price: dbItem.price,
+          image: dbItem.image_url || 'https://images.unsplash.com/photo-1606822291583-04e4cbef4809?w=800',
+          badge: badge,
+          category: catInfo ? catInfo.name : 'Classic',
+          reviews: Math.floor(Math.random() * 200) + 50,
+          rating: (4 + Math.random()).toFixed(1)
+        };
+      });
+    }
+  } catch (e) {
+    console.warn('Supabase fetch failed, UI will render empty state.', e);
+  }
+}
+
+// ANALYTICS
+function detectReferrerSource() {
+  const ref = document.referrer || '';
+  if (!ref) return 'direct';
+  try {
+    const host = new URL(ref).hostname.replace(/^www\./, '');
+    if (host.includes('wa.me') || host.includes('whatsapp')) return 'whatsapp';
+    if (host.includes('instagram')) return 'instagram';
+    if (host.includes('facebook') || host.includes('fb.com')) return 'facebook';
+    if (host.includes('google')) return 'google';
+    return host;
+  } catch (_) { return 'direct'; }
+}
+
+async function logAnalytics() {
+  try {
+    sbClient.from('traffic_sources').insert({ source: detectReferrerSource(), visited_at: new Date().toISOString() }).then();
+    sbClient.from('page_views').insert({ viewed_at: new Date().toISOString() }).then();
+  } catch (_) { }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', runInit);
+} else {
+  runInit();
+}
+
+// LOADING SCREEN
+function initLoadingScreen() {
   setTimeout(() => {
+    const loader = document.getElementById('loadingScreen');
     loader.classList.add('fade-out');
     setTimeout(() => loader.remove(), 500);
-  }, 400);
+  }, 1600);
 }
 
-async function fetchData() {
-  const [itemsRes, catRes] = await Promise.all([
-    sb.from('items').select('*').order('title'),
-    sb.from('categories').select('*').order('name')
-  ]);
-  if (itemsRes.error) throw itemsRes.error;
-  rawItems = itemsRes.data || [];
-  categories = (catRes.data || []).filter(c => c.visible !== false);
-}
+// NAVBAR SCROLL & MENU
+function initNavbar() {
+  const navbar = document.getElementById('navbar');
+  const mobileBtn = document.getElementById('mobileMenuBtn');
+  const mobileMenu = document.getElementById('mobileMenu');
 
-function renderFatalError() {
-  document.getElementById('mainContent').innerHTML = `
-    <div class="empty-panel wrap" style="padding-top:140px;">
-      <i class="ph ph-cloud-warning"></i>
-      <h3>We're having trouble loading the menu.</h3>
-      <p>Please check your connection and try again.</p>
-      <button class="btn-ghost" id="retryLoadBtn">Retry</button>
-    </div>`;
-  document.getElementById('retryLoadBtn').addEventListener('click', () => window.location.reload());
-}
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 20) navbar.classList.add('scrolled');
+    else navbar.classList.remove('scrolled');
+  });
 
-function renderEmptyMenuShell(title, body) {
-  document.getElementById('signatureSection').classList.add('is-hidden');
-  document.getElementById('menuControls').classList.add('is-hidden');
-  document.getElementById('cravingSection').classList.add('is-hidden');
-  document.getElementById('statsStrip').classList.add('is-hidden');
-  document.getElementById('menuList').innerHTML = `
-    <div class="empty-panel">
-      <i class="ph ph-cookie"></i>
-      <h3>${title}</h3>
-      <p>${body}</p>
-    </div>`;
-}
+  mobileBtn.addEventListener('click', () => {
+    mobileMenu.classList.toggle('open');
+    if (mobileMenu.classList.contains('open')) {
+      mobileBtn.innerHTML = '<i class="ph ph-x"></i>';
+    } else {
+      mobileBtn.innerHTML = '<i class="ph ph-list"></i>';
+    }
+  });
 
-// ============================================================
-// DERIVED DATA HELPERS
-// ============================================================
-function categoryName(id) {
-  const c = categories.find(c => c.id === id);
-  return c ? c.name : null;
-}
-
-function buildPriceBuckets() {
-  const prices = rawItems.filter(i => i.is_available).map(i => i.price).filter(p => typeof p === 'number');
-  const unique = [...new Set(prices)].sort((a, b) => a - b);
-  if (unique.length < 4) { priceBuckets = []; return; }
-
-  const sorted = [...prices].sort((a, b) => a - b);
-  const t1 = sorted[Math.floor(sorted.length / 3)];
-  const t2 = sorted[Math.floor((sorted.length * 2) / 3)];
-  const round = n => Math.round(n / 10) * 10;
-  const low = round(t1), high = round(t2);
-
-  if (low <= sorted[0] || high <= low) { priceBuckets = []; return; }
-
-  priceBuckets = [
-    { label: `Under ₹${low}`, min: -Infinity, max: low },
-    { label: `₹${low}–₹${high}`, min: low, max: high },
-    { label: `₹${high}+`, min: high, max: Infinity }
-  ];
-}
-
-// ============================================================
-// RENDER: category nav
-// ============================================================
-function renderCategoryNav() {
-  const usedCatIds = new Set(rawItems.map(i => i.category_id));
-  const usable = categories.filter(c => usedCatIds.has(c.id));
-  const nav = document.getElementById('categoryNav');
-
-  const chips = [{ id: 'all', name: 'All' }, ...usable];
-  nav.innerHTML = chips.map(c => `
-    <button class="cat-btn ${activeCategory === c.id ? 'active' : ''}" data-cat="${c.id}" role="tab" aria-selected="${activeCategory === c.id}">
-      ${c.icon ? c.icon + ' ' : ''}${escapeHtml(c.name)}
-    </button>
-  `).join('');
-
-  nav.querySelectorAll('.cat-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      activeCategory = btn.dataset.cat;
-      renderCategoryNav();
-      applyFiltersAndRender();
+  mobileMenu.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+      mobileMenu.classList.remove('open');
+      mobileBtn.innerHTML = '<i class="ph ph-list"></i>';
     });
   });
 }
 
-// ============================================================
-// RENDER: price filter
-// ============================================================
-function renderPriceFilter() {
-  const wrap = document.getElementById('priceFilter');
-  if (!priceBuckets.length) { wrap.classList.add('is-hidden'); return; }
-  wrap.classList.remove('is-hidden');
-  wrap.innerHTML = priceBuckets.map((b, i) => `
-    <button class="price-chip ${activePriceBucket === i ? 'active' : ''}" data-idx="${i}">${b.label}</button>
-  `).join('');
-  wrap.querySelectorAll('.price-chip').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const idx = Number(btn.dataset.idx);
-      activePriceBucket = activePriceBucket === idx ? null : idx;
-      renderPriceFilter();
-      applyFiltersAndRender();
-    });
-  });
-}
+// UI HELPERS
+function createProductCard(product) {
+  const badgeHTML = product.badge ? `<div class="badge">${product.badge}</div>` : '';
+  const starsHTML = Array(5).fill('★').join('') + `<span>(${product.reviews})</span>`;
 
-// ============================================================
-// RENDER: stats strip
-// ============================================================
-function renderStats() {
-  const available = rawItems.filter(i => i.is_available);
-  const usedCatIds = new Set(rawItems.map(i => i.category_id));
-  const catCount = categories.filter(c => usedCatIds.has(c.id)).length;
-
-  document.getElementById('statsStrip').innerHTML = `
-    <div class="stat-block"><strong>${available.length}</strong><span>Brownies</span></div>
-    <div class="stat-block"><strong>${catCount}</strong><span>Categories</span></div>
-    <div class="stat-block"><strong>Small Batch</strong><span>Every Day</span></div>
+  return `
+    <div class="product-card" onclick="openProductModal('${product.id}')">
+      <div class="pc-img-wrap">
+        <img src="${product.image}" alt="${product.name}" class="pc-img" loading="lazy">
+        <div class="pc-overlay"></div>
+        ${badgeHTML}
+        <button class="pc-wishlist" onclick="event.stopPropagation();"><i class="ph ph-heart"></i></button>
+        <div class="pc-quick-view"><i class="ph ph-eye"></i> Quick View</div>
+      </div>
+      <div class="pc-content">
+        <div class="pc-stars">${starsHTML}</div>
+        <h3 class="pc-title">${product.name}</h3>
+        <p class="pc-desc">${product.desc}</p>
+        <div class="pc-footer">
+          <div class="pc-price">₹${product.price}</div>
+          <button class="pc-add" onclick="event.stopPropagation(); addToCart('${product.id}')">
+            <i class="ph ph-shopping-bag"></i>
+          </button>
+        </div>
+      </div>
+    </div>
   `;
 }
 
-// ============================================================
-// RENDER: signature treats (real best_seller field only)
-// ============================================================
-function renderSignature() {
-  const section = document.getElementById('signatureSection');
-  const featured = rawItems.filter(i => i.best_seller && i.is_available).slice(0, 6);
-  if (!featured.length) { section.classList.add('is-hidden'); return; }
-  section.classList.remove('is-hidden');
+// RENDERERS
+function renderFeaturedProducts() {
+  const grid = document.getElementById('featuredGrid');
+  const featured = products.slice(0, 3);
+  grid.innerHTML = featured.map(createProductCard).join('');
 
-  document.getElementById('signatureGrid').innerHTML = featured.map(item => `
-    <div class="sig-card reveal" data-id="${item.id}" tabindex="0" role="button" aria-label="View ${escapeHtml(item.title)}">
-      <div class="sig-star"><i class="ph-fill ph-star"></i> Bestseller</div>
-      <h3>${escapeHtml(item.title)}</h3>
-      <p>${escapeHtml(item.description || '')}</p>
-      <div class="sig-foot">
-        <span class="sig-price">₹${item.price}</span>
-        <span class="sig-add" data-quickadd="${item.id}" aria-hidden="true"><i class="ph ph-plus"></i></span>
+  // animate in
+  setTimeout(() => {
+    grid.querySelectorAll('.product-card').forEach((el, i) => {
+      setTimeout(() => el.classList.add('loaded'), i * 100);
+    });
+    attachTilt(grid.querySelectorAll('.product-card'));
+  }, 300);
+}
+
+window.viewFullMenu = function () {
+  const grid = document.getElementById('featuredGrid');
+  grid.innerHTML = products.map(createProductCard).join('');
+
+  // Animate in the new ones
+  setTimeout(() => {
+    grid.querySelectorAll('.product-card:not(.loaded)').forEach((el, i) => {
+      setTimeout(() => el.classList.add('loaded'), i * 50);
+    });
+    attachTilt(grid.querySelectorAll('.product-card'));
+  }, 50);
+
+  // Hide the buttons after clicking
+  document.querySelectorAll('button[onclick="viewFullMenu()"]').forEach(b => b.style.display = 'none');
+}
+
+function renderMoods() {
+  const container = document.getElementById('moodPillContainer');
+  container.innerHTML = moods.map(mood => `
+    <button class="mood-pill ${mood.id === activeMood ? 'active' : ''}" data-mood="${mood.id}">
+      ${mood.label}
+    </button>
+  `).join('');
+
+  container.querySelectorAll('.mood-pill').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      activeMood = e.target.dataset.mood;
+      renderMoods();
+      renderMoodProducts();
+    });
+  });
+}
+
+function renderMoodProducts() {
+  const grid = document.getElementById('moodGrid');
+
+  // Simple mock logic
+  let filtered = [];
+  if (activeMood === 'craving') filtered = products.slice(0, 3);
+  else if (activeMood === 'sweet') filtered = [products[1], products[3], products[4]];
+  else if (activeMood === 'gift') filtered = [products[5], products[2], products[0]];
+  else if (activeMood === 'latenight') filtered = [products[0], products[4]];
+  else if (activeMood === 'party') filtered = [products[5], products[4], products[3]];
+  else filtered = products.slice(3, 6);
+
+  filtered = filtered.filter(Boolean);
+  grid.innerHTML = filtered.map(createProductCard).join('');
+
+  setTimeout(() => {
+    grid.querySelectorAll('.product-card').forEach((el, i) => {
+      setTimeout(() => el.classList.add('loaded'), i * 100);
+    });
+    attachTilt(grid.querySelectorAll('.product-card'));
+  }, 50);
+}
+
+// FRESH FROM OVEN PARALLAX
+function initFreshFromOven() {
+  const section = document.getElementById('story');
+  const visual = document.getElementById('storyVisual');
+
+  window.addEventListener('scroll', () => {
+    const rect = section.getBoundingClientRect();
+    const windowH = window.innerHeight;
+
+    // check if in view
+    if (rect.top <= windowH && rect.bottom >= 0) {
+      const totalDist = windowH + rect.height;
+      const currentDist = windowH - rect.top;
+      const progress = currentDist / totalDist;
+
+      const moveX = (progress * 150) - 50;
+      visual.querySelector('.baking-tray').style.transform = `translate(${moveX}px, 0) rotateY(-15deg) rotateX(10deg) rotateZ(-5deg)`;
+    }
+  });
+}
+
+// REVIEWS
+function renderReviews() {
+  const grid = document.getElementById('reviewGrid');
+  grid.innerHTML = reviews.map(r => `
+    <div class="review-card">
+      <div class="rc-stars">${'★'.repeat(r.rating)}</div>
+      <p class="rc-text">"${r.text}"</p>
+      <div class="rc-author">
+        <div class="rc-avatar">${r.avatar}</div>
+        <div class="rc-author-info">
+          <h4>${r.name}</h4>
+          <p>${r.productName}</p>
+        </div>
       </div>
     </div>
   `).join('');
 
-  document.querySelectorAll('.sig-card').forEach(card => {
-    card.addEventListener('click', (e) => {
-      if (e.target.closest('[data-quickadd]')) { quickAdd(e.target.closest('[data-quickadd]').dataset.quickadd); return; }
-      openDetail(card.dataset.id);
+  // Intersection observer for animation
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('loaded');
+        observer.unobserve(entry.target);
+      }
     });
-    card.addEventListener('keydown', (e) => { if (e.key === 'Enter') openDetail(card.dataset.id); });
+  }, { threshold: 0.1 });
+
+  grid.querySelectorAll('.review-card').forEach(el => observer.observe(el));
+}
+
+// PRODUCT MODAL
+let modalActiveQty = 1;
+let modalActiveProduct = null;
+
+window.openProductModal = function (id) {
+  modalActiveProduct = products.find(p => p.id === id);
+  if (!modalActiveProduct) return;
+  modalActiveQty = 1;
+
+  document.getElementById('modalImg').src = modalActiveProduct.image;
+
+  const badge = document.getElementById('modalBadge');
+  if (modalActiveProduct.badge) { badge.style.display = 'block'; badge.innerText = modalActiveProduct.badge; }
+  else { badge.style.display = 'none'; }
+
+  document.getElementById('modalStars').innerHTML = '★'.repeat(5) + ` <span>(${modalActiveProduct.reviews} reviews)</span>`;
+  document.getElementById('modalCat').innerText = modalActiveProduct.category;
+  document.getElementById('modalTitle').innerText = modalActiveProduct.name;
+  document.getElementById('modalDesc').innerText = modalActiveProduct.desc;
+
+  // mock ingredients
+  const ings = ['Single-Origin Cocoa', 'Organic Butter', 'Dark Chocolate'];
+  document.getElementById('modalIngredients').innerHTML = ings.map(i => `<span class="ing-tag">${i}</span>`).join('');
+
+  updateModalPrice();
+
+  document.getElementById('productModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+document.getElementById('closeModalBtn').addEventListener('click', closeProductModal);
+document.getElementById('productModal').addEventListener('click', (e) => {
+  if (e.target.id === 'productModal') closeProductModal();
+});
+
+function closeProductModal() {
+  document.getElementById('productModal').classList.remove('open');
+  document.body.style.overflow = 'auto';
+}
+
+document.getElementById('modalQtyInc').addEventListener('click', () => { modalActiveQty++; updateModalPrice(); });
+document.getElementById('modalQtyDec').addEventListener('click', () => { if (modalActiveQty > 1) { modalActiveQty--; updateModalPrice(); } });
+
+function updateModalPrice() {
+  document.getElementById('modalQtyVal').innerText = modalActiveQty;
+  document.getElementById('modalPrice').innerText = '₹' + (modalActiveProduct.price * modalActiveQty);
+  document.getElementById('modalAddToCart').innerHTML = `<i class="ph ph-shopping-bag"></i> Add to Box • ₹${modalActiveProduct.price * modalActiveQty}`;
+}
+
+document.getElementById('modalAddToCart').addEventListener('click', () => {
+  addToCart(modalActiveProduct.id, modalActiveQty);
+  closeProductModal();
+  document.getElementById('cartDrawerOverlay').classList.add('open');
+});
+
+// CART
+function initCart() {
+  document.getElementById('openCartBtn').addEventListener('click', () => {
+    renderCartDrawer();
+    document.getElementById('cartDrawerOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  });
+
+  document.getElementById('closeCartBtn').addEventListener('click', closeCart);
+  document.getElementById('cartDrawerOverlay').addEventListener('click', (e) => {
+    if (e.target.id === 'cartDrawerOverlay') closeCart();
   });
 }
 
-// ============================================================
-// FILTER + SORT + RENDER FULL LIST
-// ============================================================
-function getFilteredSortedItems() {
-  let list = [...rawItems];
-
-  if (activeCategory !== 'all') list = list.filter(i => i.category_id === activeCategory);
-
-  if (activePriceBucket !== null && priceBuckets[activePriceBucket]) {
-    const { min, max } = priceBuckets[activePriceBucket];
-    list = list.filter(i => i.price >= min && i.price < max);
-  }
-
-  if (searchQuery.trim()) {
-    const q = searchQuery.trim().toLowerCase();
-    list = list.filter(i => {
-      const cat = (categoryName(i.category_id) || '').toLowerCase();
-      return i.title.toLowerCase().includes(q) || (i.description || '').toLowerCase().includes(q) || cat.includes(q);
-    });
-  }
-
-  switch (sortMode) {
-    case 'price-asc': list.sort((a, b) => a.price - b.price); break;
-    case 'price-desc': list.sort((a, b) => b.price - a.price); break;
-    case 'az': list.sort((a, b) => a.title.localeCompare(b.title)); break;
-    case 'za': list.sort((a, b) => b.title.localeCompare(a.title)); break;
-    default:
-      // Recommended: available + bestsellers first, then original order
-      list.sort((a, b) => (b.is_available - a.is_available) || ((b.best_seller ? 1 : 0) - (a.best_seller ? 1 : 0)));
-  }
-
-  return list;
+function closeCart() {
+  document.getElementById('cartDrawerOverlay').classList.remove('open');
+  document.body.style.overflow = 'auto';
 }
 
-function applyFiltersAndRender() {
-  const list = getFilteredSortedItems();
-  const listEl = document.getElementById('menuList');
-  const countEl = document.getElementById('resultsCount');
+window.addToCart = function (id, qty = 1) {
+  const p = products.find(x => x.id === id);
+  const existing = cart.find(x => x.id === id);
+  if (existing) {
+    existing.quantity += qty;
+  } else {
+    cart.push({ ...p, quantity: qty });
+  }
+  updateCartIcon();
+  renderCartDrawer();
+}
 
-  countEl.textContent = list.length === rawItems.length
-    ? `${list.length} treats on the menu`
-    : `${list.length} treat${list.length === 1 ? '' : 's'} found`;
+window.updateCartQty = function (id, delta) {
+  const item = cart.find(x => x.id === id);
+  if (!item) return;
+  item.quantity += delta;
+  if (item.quantity <= 0) {
+    cart = cart.filter(x => x.id !== id);
+  }
+  updateCartIcon();
+  renderCartDrawer();
+}
 
-  if (!list.length) {
-    listEl.innerHTML = `
-      <div class="empty-panel">
-        <i class="ph ph-magnifying-glass"></i>
-        <h3>Nothing matched that craving.</h3>
-        <p>Try another brownie or browse all treats.</p>
-        <button class="btn-ghost" id="showAllBtn">Show All Brownies</button>
-      </div>`;
-    document.getElementById('showAllBtn').addEventListener('click', () => {
-      activeCategory = 'all'; activePriceBucket = null; searchQuery = '';
-      document.getElementById('menuSearch').value = '';
-      renderCategoryNav(); renderPriceFilter(); applyFiltersAndRender();
-    });
+window.removeFromCart = function (id) {
+  cart = cart.filter(x => x.id !== id);
+  updateCartIcon();
+  renderCartDrawer();
+}
+
+function updateCartIcon() {
+  const count = cart.reduce((a, b) => a + b.quantity, 0);
+  const badge = document.getElementById('cartCountBadge');
+  badge.innerText = count;
+  if (count > 0) badge.classList.add('active');
+  else badge.classList.remove('active');
+}
+
+function renderCartDrawer() {
+  const list = document.getElementById('cartItemsList');
+  const subtotalEl = document.getElementById('cartSubtotal');
+  const totalEl = document.getElementById('cartTotal');
+
+  if (cart.length === 0) {
+    list.innerHTML = `<div style="text-align: center; padding: 40px 0; color: var(--text-mute);">Your box is empty.</div>`;
+    subtotalEl.innerText = '₹0';
+    totalEl.innerText = '₹0';
     return;
   }
 
-  listEl.innerHTML = list.map((item, i) => {
-    const cat = categoryName(item.category_id);
-    const num = String(i + 1).padStart(2, '0');
-    const inCart = cart.find(c => c.id === item.id);
-    return `
-    <div class="menu-row reveal ${item.is_available ? '' : 'unavailable'}" data-id="${item.id}" role="listitem" tabindex="0">
-      <span class="mr-num">${num}</span>
-      <div class="mr-body">
-        <h3>${escapeHtml(item.title)}
-          ${item.best_seller ? '<span class="badge-mini badge-best">Bestseller</span>' : ''}
-          ${!item.is_available ? '<span class="badge-mini badge-unavailable">Currently Unavailable</span>' : ''}
-        </h3>
-        ${item.description ? `<p>${escapeHtml(item.description)}</p>` : ''}
-        ${cat ? `<div class="mr-meta">${escapeHtml(cat)}</div>` : ''}
+  list.innerHTML = cart.map(item => `
+    <div class="cart-item">
+      <img src="${item.image}" alt="${item.name}">
+      <div class="cart-item-info">
+        <h4>${item.name}</h4>
+        <div class="cart-item-price">₹${item.price}</div>
+        <div class="cart-item-actions">
+          <div class="qty-control">
+            <button onclick="updateCartQty('${item.id}', -1)"><i class="ph ph-minus"></i></button>
+            <span>${item.quantity}</span>
+            <button onclick="updateCartQty('${item.id}', 1)"><i class="ph ph-plus"></i></button>
+          </div>
+          <button class="cart-item-remove" onclick="removeFromCart('${item.id}')"><i class="ph ph-trash"></i></button>
+        </div>
       </div>
-      <div class="mr-price">₹${item.price}</div>
-      <button class="mr-add ${inCart ? 'in-order' : ''}" data-add="${item.id}" ${!item.is_available ? 'disabled' : ''}>
-        ${!item.is_available ? 'Unavailable' : inCart ? `In Order · ${inCart.quantity}` : '+ Add'}
-      </button>
-    </div>`;
-  }).join('');
+    </div>
+  `).join('');
 
-  listEl.querySelectorAll('.menu-row').forEach(row => {
-    row.addEventListener('click', (e) => {
-      if (e.target.closest('[data-add]')) return;
-      openDetail(row.dataset.id);
+  const subtotal = cart.reduce((a, b) => a + (b.price * b.quantity), 0);
+  subtotalEl.innerText = '₹' + subtotal;
+  totalEl.innerText = '₹' + (subtotal + 50);
+}
+
+// ===== PREMIUM INTERACTION LAYER =====
+// 3D tilt, magnetic buttons, scroll reveal, ambient cursor glow.
+function initPremiumInteractions() {
+  const isTouch = window.matchMedia('(hover: none)').matches;
+
+  // Scroll reveal for any .reveal element on the page
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in-view');
+        revealObserver.unobserve(entry.target);
+      }
     });
-    row.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.target.closest('[data-add]')) openDetail(row.dataset.id); });
-  });
-  listEl.querySelectorAll('[data-add]').forEach(btn => {
-    btn.addEventListener('click', (e) => { e.stopPropagation(); quickAdd(btn.dataset.add); });
+  }, { threshold: 0.15 });
+  document.querySelectorAll('.reveal, .reveal-scale').forEach(el => revealObserver.observe(el));
+
+  // Re-observe any late-rendered reveal elements
+  window.__holaRevealObserver = revealObserver;
+
+  if (isTouch) return; // skip pointer-driven effects on touch devices
+
+  // Ambient cursor glow follow
+  const glow = document.getElementById('cursorGlow');
+  if (glow) {
+    window.addEventListener('mousemove', (e) => {
+      glow.style.left = e.clientX + 'px';
+      glow.style.top = e.clientY + 'px';
+    }, { passive: true });
+  }
+
+  // Magnetic buttons
+  document.querySelectorAll('.btn').forEach(btn => {
+    btn.classList.add('magnetic');
+    btn.addEventListener('mousemove', (e) => {
+      const rect = btn.getBoundingClientRect();
+      const x = e.clientX - rect.left - rect.width / 2;
+      const y = e.clientY - rect.top - rect.height / 2;
+      btn.style.transform = `translate(${x * 0.18}px, ${y * 0.35}px)`;
+    });
+    btn.addEventListener('mouseleave', () => { btn.style.transform = ''; });
   });
 
-  initRevealObserver();
+  // Tilt on gallery tiles too
+  attachTilt(document.querySelectorAll('.gallery-tile'), 8);
 }
 
-// ============================================================
-// CRAVING DISCOVERY (derived from real categories)
-// ============================================================
-function renderCravingChips() {
-  const usedCatIds = new Set(rawItems.map(i => i.category_id));
-  const usable = categories.filter(c => usedCatIds.has(c.id));
-  const wrap = document.getElementById('cravingChips');
-  if (!usable.length) { document.getElementById('cravingSection').classList.add('is-hidden'); return; }
-
-  wrap.innerHTML = usable.map(c => `<button class="craving-chip" data-cat="${c.id}">${c.icon ? c.icon + ' ' : ''}${escapeHtml(c.name)}</button>`).join('');
-  wrap.querySelectorAll('.craving-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      wrap.querySelectorAll('.craving-chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      activeCategory = chip.dataset.cat;
-      renderCategoryNav();
-      applyFiltersAndRender();
-      document.getElementById('cravingNote').textContent = `Showing your ${chip.textContent.trim()} favourites`;
-      document.getElementById('fullMenu').scrollIntoView({ behavior: 'smooth', block: 'start' });
+// Attach a subtle 3D tilt-on-hover to a NodeList of cards
+function attachTilt(nodeList, intensity = 10) {
+  if (window.matchMedia('(hover: none)').matches) return;
+  nodeList.forEach(card => {
+    if (card.dataset.tiltBound) return;
+    card.dataset.tiltBound = '1';
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const px = (e.clientX - rect.left) / rect.width - 0.5;
+      const py = (e.clientY - rect.top) / rect.height - 0.5;
+      card.style.transform = `perspective(900px) rotateX(${(-py * intensity).toFixed(2)}deg) rotateY(${(px * intensity).toFixed(2)}deg) translateY(-6px)`;
+    });
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = '';
     });
   });
 }
 
-// ============================================================
-// PRODUCT DETAIL PANEL
-// ============================================================
-function openDetail(id) {
-  const item = rawItems.find(i => i.id === id);
-  if (!item) return;
-  detailItem = item;
-  detailQty = 1;
-
-  document.getElementById('detailCat').textContent = categoryName(item.category_id) || '';
-  document.getElementById('detailTitle').textContent = item.title;
-  document.getElementById('detailDesc').textContent = item.description || '';
-  document.getElementById('detailPrice').textContent = `₹${item.price}`;
-
-  const badges = [];
-  if (item.best_seller) badges.push('<span class="badge-mini badge-best">Bestseller</span>');
-  if (!item.is_available) badges.push('<span class="badge-mini badge-unavailable">Currently Unavailable</span>');
-  document.getElementById('detailBadges').innerHTML = badges.join('');
-
-  const addBtn = document.getElementById('detailAddBtn');
-  addBtn.disabled = !item.is_available;
-  addBtn.textContent = item.is_available ? 'Add to Order' : 'Currently Unavailable';
-  document.getElementById('detailQtyVal').textContent = detailQty;
-
-  const overlay = document.getElementById('detailOverlay');
-  overlay.classList.add('open');
-  document.body.classList.add('no-scroll');
-  document.getElementById('detailClose').focus();
-}
-
-function closeDetail() {
-  document.getElementById('detailOverlay').classList.remove('open');
-  document.body.classList.remove('no-scroll');
-  detailItem = null;
-}
-
-// ============================================================
-// MINI CART / ORDER SUMMARY
-// ============================================================
-function loadCartFromStorage() {
+// ===== EXPERIENCE RELIABILITY LAYER =====
+// Keeps commerce state between visits without changing the existing Supabase source of truth.
+(() => {
+  const CART_KEY = 'hola-brownie-cart-v2';
+  const fallbackImage = 'https://images.unsplash.com/photo-1606312619070-d48b4c652a52?w=800&q=80';
+  const toast = (message) => {
+    const el = document.getElementById('siteToast');
+    if (!el) return;
+    el.textContent = message;
+    el.classList.add('show');
+    clearTimeout(window.__holaToastTimer);
+    window.__holaToastTimer = setTimeout(() => el.classList.remove('show'), 2600);
+  };
+  const saveCart = () => localStorage.setItem(CART_KEY, JSON.stringify(cart));
   try { cart = JSON.parse(localStorage.getItem(CART_KEY) || '[]'); } catch (_) { cart = []; }
-}
-function saveCart() { localStorage.setItem(CART_KEY, JSON.stringify(cart)); }
 
-function quickAdd(id) {
-  const item = rawItems.find(i => i.id === id);
-  if (!item || !item.is_available) return;
-  addToCart(item, 1);
-  showToast(`Added ${item.title} to your order`);
-}
+  const originalAdd = window.addToCart;
+  window.addToCart = (id, qty = 1) => { originalAdd(id, qty); saveCart(); toast('Added to your brownie box'); };
+  const originalQty = window.updateCartQty;
+  window.updateCartQty = (id, delta) => { originalQty(id, delta); saveCart(); };
+  const originalRemove = window.removeFromCart;
+  window.removeFromCart = (id) => { originalRemove(id); saveCart(); toast('Removed from your box'); };
 
-function addToCart(item, qty) {
-  const existing = cart.find(c => c.id === item.id);
-  if (existing) existing.quantity += qty;
-  else cart.push({ id: item.id, name: item.title, price: item.price, quantity: qty, image: item.image_url || '' });
-  saveCart();
-  updateOrderUI();
-  applyFiltersAndRender();
-  renderSignature();
-}
+  document.addEventListener('error', (event) => {
+    const image = event.target;
+    if (image.tagName === 'IMG' && !image.matches('[data-logo]') && image.src !== fallbackImage) image.src = fallbackImage;
+  }, true);
 
-function updateCartQty(id, delta) {
-  const line = cart.find(c => c.id === id);
-  if (!line) return;
-  line.quantity += delta;
-  if (line.quantity <= 0) cart = cart.filter(c => c.id !== id);
-  saveCart();
-  updateOrderUI();
-  applyFiltersAndRender();
-}
-
-function removeCartItem(id) {
-  cart = cart.filter(c => c.id !== id);
-  saveCart();
-  updateOrderUI();
-  applyFiltersAndRender();
-}
-
-function cartTotal() { return cart.reduce((sum, c) => sum + c.price * c.quantity, 0); }
-function cartCount() { return cart.reduce((sum, c) => sum + c.quantity, 0); }
-
-function updateOrderUI() {
-  document.getElementById('navOrderCount').textContent = cartCount();
-
-  const itemsEl = document.getElementById('orderItems');
-  if (!cart.length) {
-    itemsEl.innerHTML = `<div class="order-empty"><i class="ph ph-shopping-bag"></i><p>Your order is empty. Add a few treats from the menu.</p></div>`;
-  } else {
-    itemsEl.innerHTML = cart.map(c => `
-      <div class="order-item">
-        <div class="order-item-info">
-          <h4>${escapeHtml(c.name)}</h4>
-          <span>₹${c.price * c.quantity}</span>
-        </div>
-        <div class="order-item-ctrl">
-          <button data-dec="${c.id}" aria-label="Decrease ${escapeHtml(c.name)} quantity"><i class="ph ph-minus"></i></button>
-          <span>${c.quantity}</span>
-          <button data-inc="${c.id}" aria-label="Increase ${escapeHtml(c.name)} quantity"><i class="ph ph-plus"></i></button>
-        </div>
-      </div>
-    `).join('');
-    itemsEl.querySelectorAll('[data-dec]').forEach(b => b.addEventListener('click', () => updateCartQty(b.dataset.dec, -1)));
-    itemsEl.querySelectorAll('[data-inc]').forEach(b => b.addEventListener('click', () => updateCartQty(b.dataset.inc, 1)));
-  }
-
-  document.getElementById('orderTotal').textContent = `₹${cartTotal()}`;
-  document.getElementById('orderWaBtn').disabled = cart.length === 0;
-}
-
-function openOrderPanel() {
-  document.getElementById('orderPanel').classList.add('open');
-  document.getElementById('orderOverlay').classList.add('open');
-  document.body.classList.add('no-scroll');
-}
-function closeOrderPanel() {
-  document.getElementById('orderPanel').classList.remove('open');
-  document.getElementById('orderOverlay').classList.remove('open');
-  document.body.classList.remove('no-scroll');
-}
-
-// ============================================================
-// WHATSAPP
-// ============================================================
-function buildWhatsAppUrl(message) {
-  return `https://api.whatsapp.com/send?phone=${WHATSAPP_NUMBER}&text=${encodeURIComponent(message)}`;
-}
-
-function sendCartToWhatsApp() {
-  if (!cart.length) return;
-  const lines = cart.map(c => `• ${c.name} × ${c.quantity} — ₹${c.price * c.quantity}`);
-  const message = ['Hi Hola Brownie! I\'d like to order:', '', ...lines, '', `Total: ₹${cartTotal()}`, 'Please confirm availability and delivery.'].join('\n');
-  window.open(buildWhatsAppUrl(message), '_blank', 'noopener');
-}
-
-function genericWhatsAppGreeting() {
-  return 'Hi Hola Brownie! I have a question about the menu.';
-}
-
-// ============================================================
-// TOAST
-// ============================================================
-let toastTimer;
-function showToast(msg) {
-  const el = document.getElementById('menuToast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
-}
-
-// ============================================================
-// REVEAL ON SCROLL
-// ============================================================
-let revealObserver;
-function initRevealObserver() {
-  if (!revealObserver) {
-    revealObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) { entry.target.classList.add('in-view'); revealObserver.unobserve(entry.target); }
-      });
-    }, { threshold: 0.12 });
-  }
-  document.querySelectorAll('.reveal:not(.in-view)').forEach(el => revealObserver.observe(el));
-}
-
-// ============================================================
-// STATIC EVENTS
-// ============================================================
-function wireStaticEvents() {
-  // Search (debounced)
-  let searchTimer;
-  document.getElementById('menuSearch').addEventListener('input', (e) => {
-    clearTimeout(searchTimer);
-    const val = e.target.value;
-    searchTimer = setTimeout(() => { searchQuery = val; applyFiltersAndRender(); }, 280);
+  const searchOverlay = document.getElementById('searchOverlay');
+  const searchInput = document.getElementById('productSearch');
+  const searchResults = document.getElementById('searchResults');
+  const closeSearch = () => { searchOverlay.hidden = true; document.body.style.overflow = ''; };
+  const runSearch = () => {
+    const q = searchInput.value.trim().toLowerCase();
+    const matches = products.filter(p => `${p.name} ${p.desc} ${p.category}`.toLowerCase().includes(q));
+    searchResults.innerHTML = q && matches.length ? matches.slice(0, 7).map(p => `<button class="search-result" data-id="${p.id}"><img src="${p.image}" alt=""><span><b>${p.name}</b><small>${p.category} · ₹${p.price}</small></span></button>`).join('') : q ? '<p>No brownies match that search. Try a flavour or mood.</p>' : '<p>Search by brownie, flavour or occasion.</p>';
+    searchResults.querySelectorAll('[data-id]').forEach(button => button.addEventListener('click', () => { closeSearch(); openProductModal(button.dataset.id); }));
+  };
+  document.getElementById('openSearchBtn')?.addEventListener('click', () => { searchOverlay.hidden = false; document.body.style.overflow = 'hidden'; searchInput.focus(); runSearch(); });
+  document.getElementById('closeSearchBtn')?.addEventListener('click', closeSearch);
+  searchInput?.addEventListener('input', runSearch);
+  document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { closeSearch(); closeProductModal(); closeCart(); } });
+  const WHATSAPP_ORDER_NUMBER = '917902770041'; // +91 79027 70041 — international format, no leading +
+  document.querySelector('.cart-checkout-btn')?.addEventListener('click', () => {
+    if (!cart.length) return toast('Your brownie box is empty.');
+    const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const lines = cart.map(item => `• ${item.name} × ${item.quantity} — ₹${item.price * item.quantity}`);
+    const message = ['Hello Hola Brownie! I would like to place an order:', '', ...lines, '', `Subtotal: ₹${subtotal}`, 'Please confirm availability and delivery.'].join('\n');
+    window.open(`https://api.whatsapp.com/send?phone=${WHATSAPP_ORDER_NUMBER}&text=${encodeURIComponent(message)}`, '_blank', 'noopener');
   });
 
-  // Sort
-  document.getElementById('sortSelect').addEventListener('change', (e) => {
-    sortMode = e.target.value;
-    applyFiltersAndRender();
+  // Logo assets are optional until the final brand mark is supplied.
+  document.querySelectorAll('[data-logo]').forEach(logo => {
+    logo.addEventListener('load', () => {
+      logo.style.display = 'block';
+      logo.nextElementSibling?.classList.add('is-hidden');
+    });
+    logo.addEventListener('error', () => logo.style.display = 'none');
   });
 
-  // Detail panel
-  document.getElementById('detailClose').addEventListener('click', closeDetail);
-  document.getElementById('detailOverlay').addEventListener('click', (e) => { if (e.target.id === 'detailOverlay') closeDetail(); });
-  document.getElementById('detailQtyInc').addEventListener('click', () => { detailQty++; document.getElementById('detailQtyVal').textContent = detailQty; });
-  document.getElementById('detailQtyDec').addEventListener('click', () => { if (detailQty > 1) { detailQty--; document.getElementById('detailQtyVal').textContent = detailQty; } });
-  document.getElementById('detailAddBtn').addEventListener('click', () => {
-    if (!detailItem || !detailItem.is_available) return;
-    addToCart(detailItem, detailQty);
-    showToast(`Added ${detailItem.title} × ${detailQty} to your order`);
-    closeDetail();
-  });
+  const lightbox = document.getElementById('galleryLightbox');
+  const lightboxImage = document.getElementById('lightboxImage');
+  document.querySelectorAll('.gallery-tile').forEach(tile => tile.addEventListener('click', () => {
+    lightboxImage.src = tile.dataset.image;
+    lightbox.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }));
+  document.getElementById('closeLightbox')?.addEventListener('click', () => { lightbox.hidden = true; document.body.style.overflow = ''; });
 
-  // Order panel
-  document.getElementById('openOrderBtn').addEventListener('click', openOrderPanel);
-  document.getElementById('orderClose').addEventListener('click', closeOrderPanel);
-  document.getElementById('orderOverlay').addEventListener('click', closeOrderPanel);
-  document.getElementById('orderWaBtn').addEventListener('click', sendCartToWhatsApp);
 
-  // Floating + footer WhatsApp — send the cart if it has items, else a friendly greeting
-  const genericLink = () => buildWhatsAppUrl(cart.length ? '' : genericWhatsAppGreeting()) ;
-  document.getElementById('floatWaBtn').addEventListener('click', (e) => {
-    e.preventDefault();
-    if (cart.length) sendCartToWhatsApp();
-    else window.open(buildWhatsAppUrl(genericWhatsAppGreeting()), '_blank', 'noopener');
-  });
-  document.getElementById('footerWaLink').addEventListener('click', (e) => {
-    e.preventDefault();
-    if (cart.length) sendCartToWhatsApp();
-    else window.open(buildWhatsAppUrl(genericWhatsAppGreeting()), '_blank', 'noopener');
-  });
-
-  // Escape closes whatever is open
-  document.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape') return;
-    if (document.getElementById('detailOverlay').classList.contains('open')) closeDetail();
-    if (document.getElementById('orderPanel').classList.contains('open')) closeOrderPanel();
-  });
-}
-
-// ============================================================
-// UTIL
-// ============================================================
-function escapeHtml(str) {
-  return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
+  setTimeout(() => {
+    if (!products.length) {
+      document.querySelectorAll('#featuredGrid,#moodGrid').forEach(grid => grid.innerHTML = '<div class="empty-state"><i class="ph ph-cookie"></i><h3>We’re having trouble loading the brownies.</h3><p>Please check your connection and refresh to try again.</p></div>');
+    }
+    updateCartIcon();
+    renderCartDrawer();
+  }, 1800);
+})();
