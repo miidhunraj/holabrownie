@@ -8,9 +8,9 @@ let products = [];
 let dbCategories = [];
 
 const reviews = [
-  { id: 1, name: 'Sarah M.', rating: 5, text: "Literally the best brownies I've ever had in my life. The crackly top is to die for!", productName: 'Classic Fudge Brownie', avatar: 'S' },
-  { id: 2, name: 'Rahul K.', rating: 5, text: "Ordered the gift box for my wife's birthday. The packaging was premium and taste was out of this world.", productName: 'Hola Brownie Box', avatar: 'R' },
-  { id: 3, name: 'Ananya P.', rating: 4, text: "The salted caramel one is my absolute favorite. Perfectly balanced and not overly sweet.", productName: 'Salted Caramel Swirl', avatar: 'A' }
+  { id: 1, name: 'Midhun', rating: 5, text: "Literally the best brownies I've ever had in my life. The crackly top is to die for!", productName: 'Classic Fudge Brownie', avatar: 'M' },
+  { id: 2, name: 'Parvi', rating: 5, text: "Ordered the gift box for my wife's birthday. The packaging was premium and taste was out of this world.", productName: 'Hola Brownie Box', avatar: 'P' },
+  { id: 3, name: 'Ananya.', rating: 4, text: "The salted caramel one is my absolute favorite. Perfectly balanced and not overly sweet.", productName: 'Salted Caramel Swirl', avatar: 'A' }
 ];
 
 const moods = [
