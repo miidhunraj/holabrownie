@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Menu | Hola Brownie</title>
+  <meta name="description" content="The full Hola Brownie menu — small-batch brownies, priced simply, ordered straight to WhatsApp.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,400..600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <link rel="stylesheet" href="menu.css">
+</head>
+
+<body>
+
+  <!-- LOADING SHELL -->
+  <div class="menu-loader" id="menuLoader">
+    <div class="ml-mark">Hola <em>Brownie</em></div>
+    <p>Preparing the menu…</p>
+    <div class="ml-bar"><span></span></div>
+  </div>
+
+  <!-- TOP NAV -->
+  <nav class="menu-nav">
+    <div class="wrap menu-nav-inner">
+      <a href="index.html" class="back-link"><i class="ph ph-arrow-left"></i> Back to Hola Brownie</a>
+      <div class="menu-brand">Hola <em>Brownie</em></div>
+      <div class="menu-nav-actions">
+        <button class="nav-order-btn" id="openOrderBtn" aria-haspopup="dialog">
+          <i class="ph ph-shopping-bag"></i> Your Order
+          <span class="nav-order-count" id="navOrderCount">0</span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <main id="mainContent" aria-busy="true">
+
+    <!-- HERO -->
+    <header class="menu-hero">
+      <span class="hero-particle hp-1" aria-hidden="true"></span>
+      <span class="hero-particle hp-2" aria-hidden="true"></span>
+      <span class="hero-particle hp-3" aria-hidden="true"></span>
+      <div class="wrap">
+        <span class="hero-eyebrow">Hola Brownie</span>
+        <h1 class="hero-mark">The <em>Menu</em></h1>
+        <p class="hero-sub">Small-batch brownies, made for serious cravings. Every entry below is priced simply and
+          ready to order.</p>
+        <a href="#fullMenu" class="hero-scroll-cta">Explore the full menu <i class="ph ph-arrow-down"></i></a>
+      </div>
+    </header>
+
+    <!-- INTRO -->
+    <section class="menu-intro wrap reveal">
+      <p>Every brownie has a story. From rich classics to indulgent specials, find the one that deserves your next
+        craving.</p>
+    </section>
+
+    <!-- STATS -->
+    <section class="stats-strip reveal" id="statsStrip" aria-label="Menu statistics">
+      <!-- JS populated -->
+    </section>
+
+    <!-- CONTROLS -->
+    <div class="menu-controls" id="menuControls">
+      <div class="wrap">
+        <div class="controls-row">
+          <div class="category-nav" id="categoryNav" role="tablist" aria-label="Filter by category">
+            <!-- JS populated -->
+          </div>
+          <div class="search-sort">
+            <div class="search-box">
+              <i class="ph ph-magnifying-glass"></i>
+              <label class="sr-only" for="menuSearch">Search brownies</label>
+              <input type="search" id="menuSearch" placeholder="Search brownies…" autocomplete="off">
+            </div>
+            <label class="sr-only" for="sortSelect">Sort menu</label>
+            <select id="sortSelect" class="sort-select">
+              <option value="recommended">Recommended</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="az">A–Z</option>
+              <option value="za">Z–A</option>
+            </select>
+          </div>
+        </div>
+        <div class="price-filter" id="priceFilter" aria-label="Filter by price"></div>
+        <p class="results-count" id="resultsCount" role="status" aria-live="polite"></p>
+      </div>
+    </div>
+
+    <!-- SIGNATURE TREATS -->
+    <section class="signature-section wrap reveal" id="signatureSection">
+      <div class="section-label">
+        <h2>Signature Treats</h2>
+        <span>a few favourites worth starting with</span>
+      </div>
+      <div class="signature-grid" id="signatureGrid"></div>
+    </section>
+
+    <!-- FULL MENU -->
+    <section class="full-menu-section wrap" id="fullMenu">
+      <div class="section-label reveal">
+        <h2>Full Menu</h2>
+      </div>
+      <div class="menu-list" id="menuList" role="list">
+        <!-- JS populated -->
+      </div>
+    </section>
+
+    <!-- CRAVING DISCOVERY -->
+    <section class="craving-section" id="cravingSection">
+      <div class="wrap reveal">
+        <div class="section-label">
+          <h2>Find Your Craving</h2>
+          <span>pick a mood, we'll point you there</span>
+        </div>
+        <div class="craving-chips" id="cravingChips"></div>
+        <p class="craving-result-note" id="cravingNote"></p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="menu-footer">
+    <div class="wrap">
+      <div class="mf-brand">Hola <em>Brownie</em></div>
+      <p class="mf-tag">Fresh brownies. Made with love.</p>
+      <div class="mf-links">
+        <a href="index.html">Home</a>
+        <a href="menu.html">Menu</a>
+        <a href="#" id="footerWaLink">Order on WhatsApp</a>
+      </div>
+      <div class="mf-bottom">&copy; 2026 Hola Brownie. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <!-- FLOATING WHATSAPP -->
+  <a href="#" class="wa-float" id="floatWaBtn" aria-label="Order on WhatsApp">
+    <i class="ph ph-whatsapp-logo" style="font-size:1.2rem"></i>
+    <span>Order on WhatsApp</span>
+  </a>
+
+  <!-- PRODUCT DETAIL PANEL -->
+  <div class="detail-overlay" id="detailOverlay" role="dialog" aria-modal="true" aria-labelledby="detailTitle">
+    <div class="detail-panel">
+      <button class="detail-close" id="detailClose" aria-label="Close details"><i class="ph ph-x"></i></button>
+      <p class="detail-cat" id="detailCat"></p>
+      <h2 class="detail-title" id="detailTitle"></h2>
+      <div class="detail-badges" id="detailBadges"></div>
+      <div class="detail-price" id="detailPrice"></div>
+      <p class="detail-desc" id="detailDesc"></p>
+      <div class="detail-actions">
+        <div class="detail-qty">
+          <button id="detailQtyDec" aria-label="Decrease quantity"><i class="ph ph-minus"></i></button>
+          <span id="detailQtyVal">1</span>
+          <button id="detailQtyInc" aria-label="Increase quantity"><i class="ph ph-plus"></i></button>
+        </div>
+        <button class="detail-add-btn" id="detailAddBtn">Add to Order</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ORDER SUMMARY PANEL -->
+  <div class="order-overlay" id="orderOverlay"></div>
+  <aside class="order-panel" id="orderPanel" role="dialog" aria-modal="true" aria-label="Your order">
+    <div class="order-header">
+      <h2><i class="ph ph-shopping-bag"></i> Your Order</h2>
+      <button class="detail-close" id="orderClose" aria-label="Close order panel"><i class="ph ph-x"></i></button>
+    </div>
+    <div class="order-items" id="orderItems"></div>
+    <div class="order-footer">
+      <div class="order-total-row">
+        <span>Total</span>
+        <strong id="orderTotal">₹0</strong>
+      </div>
+      <button class="order-whatsapp-btn" id="orderWaBtn">
+        <i class="ph ph-whatsapp-logo"></i> Order on WhatsApp
+      </button>
+    </div>
+  </aside>
+
+  <div class="menu-toast" id="menuToast" role="status" aria-live="polite"></div>
+
+  <script src="menu.js"></script>
+</body>
+
+</html>
