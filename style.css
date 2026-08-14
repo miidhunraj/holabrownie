@@ -538,41 +538,8 @@ body::before {
 @media (max-width: 900px) { .h-flex { grid-template-columns: 1fr; } .story-visual { order: -1; } }
 
 /* ============================================================
-   BROWNIE BUILDER
+   SHARED QTY CONTROL (used in product modal & cart drawer)
    ============================================================ */
-.builder-section { padding: clamp(90px, 12vw, 150px) 0; background: var(--cream); }
-.builder-layout { display: grid; grid-template-columns: 1.4fr 1fr; gap: 48px; margin-top: 54px; align-items: flex-start; }
-.builder-step { margin-bottom: 40px; }
-.builder-step h3 { display: flex; align-items: center; gap: 12px; font-size: 1.15rem; color: var(--ink); margin-bottom: 20px; font-weight: 500; }
-.step-num {
-  width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  background: var(--brand-deep); color: #fff; font-family: var(--font-body); font-size: .82rem; font-weight: 700;
-}
-.step-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
-.step-header h3 { margin: 0; }
-.selection-count { font-size: .76rem; font-weight: 700; color: var(--brand-dark); background: var(--brand-soft); padding: 6px 14px; border-radius: 100px; }
-
-.size-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-.size-btn {
-  padding: 18px 8px; border-radius: 16px; border: 1.5px solid var(--line); background: var(--surface-solid);
-  display: flex; flex-direction: column; align-items: center; gap: 4px; transition: all .3s var(--ease-out);
-}
-.size-btn strong { font-family: var(--font-display); font-size: 1.6rem; color: var(--ink); }
-.size-btn span { font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-mute); }
-.size-btn:hover { border-color: var(--brand-main); transform: translateY(-2px); }
-.size-btn.active { background: var(--ink-soft); border-color: var(--ink-soft); box-shadow: var(--shadow-md); }
-.size-btn.active strong, .size-btn.active span { color: #fff8f2; }
-
-.flavor-list { display: flex; flex-direction: column; gap: 10px; max-height: 420px; overflow-y: auto; padding-right: 6px; }
-.builder-item {
-  display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 16px;
-  border: 1.5px solid var(--line); background: var(--surface-solid); transition: all .3s ease;
-}
-.builder-item.selected { border-color: var(--brand-main); background: var(--brand-light); }
-.builder-item img { width: 52px; height: 52px; border-radius: 12px; object-fit: cover; }
-.builder-item-info { flex: 1; }
-.builder-item-info h4 { font-size: .95rem; color: var(--ink); font-weight: 600; font-family: var(--font-body); }
-
 .qty-control { display: flex; align-items: center; gap: 10px; }
 .qty-control button {
   width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--line); display: flex; align-items: center; justify-content: center;
@@ -581,29 +548,6 @@ body::before {
 .qty-control button:hover:not(:disabled) { background: var(--brand-deep); border-color: var(--brand-deep); color: #fff; }
 .qty-control button:disabled { opacity: .35; cursor: not-allowed; }
 .qty-control span { min-width: 18px; text-align: center; font-weight: 700; color: var(--ink); }
-
-.gift-note {
-  width: 100%; min-height: 90px; padding: 16px; border-radius: 16px; border: 1.5px solid var(--line);
-  background: var(--surface-solid); font-family: var(--font-body); font-size: .9rem; color: var(--text);
-  resize: vertical; outline: none; transition: border-color .3s ease;
-}
-.gift-note:focus { border-color: var(--brand-main); }
-
-.summary-card {
-  background: var(--grad-dark); border-radius: 26px; padding: 32px; color: #fff8f2;
-  position: sticky; top: 110px; box-shadow: var(--shadow-lg);
-}
-.summary-header p { font-size: .84rem; color: rgba(255, 249, 244, .68); margin-top: 4px; }
-.summary-header h4 { font-size: 1.4rem; }
-.summary-body { margin: 24px 0; min-height: 90px; }
-.empty-summary { text-align: center; padding: 30px 10px; color: rgba(255, 249, 244, .5); }
-.empty-summary i { font-size: 1.8rem; display: block; margin-bottom: 8px; }
-.summary-list li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255, 255, 255, .08); font-size: .88rem; }
-.summary-footer { border-top: 1px solid rgba(255, 255, 255, .12); padding-top: 20px; }
-.summary-total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
-.summary-total-row span { font-size: .82rem; color: rgba(255, 249, 244, .68); }
-.summary-total-row strong { font-family: var(--font-display); font-size: 1.7rem; color: var(--gold-soft); }
-@media (max-width: 900px) { .builder-layout { grid-template-columns: 1fr; } .summary-card { position: static; } }
 
 /* ============================================================
    REVIEWS
