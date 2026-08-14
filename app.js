@@ -24,8 +24,6 @@ const moods = [
 
 // STATE
 let cart = [];
-let builderBoxSize = 4;
-let builderSelections = {}; // { id: qty }
 let activeMood = 'craving';
 
 // INIT
@@ -41,7 +39,6 @@ async function runInit() {
   initFreshFromOven();
   renderReviews();
   initCart();
-  initBuilder();
   initPremiumInteractions();
 }
 
@@ -256,126 +253,6 @@ function initFreshFromOven() {
       visual.querySelector('.baking-tray').style.transform = `translate(${moveX}px, 0) rotateY(-15deg) rotateX(10deg) rotateZ(-5deg)`;
     }
   });
-}
-
-// BUILDER LOGIC
-function initBuilder() {
-  document.querySelectorAll('.size-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const b = e.target.closest('.size-btn');
-      document.querySelectorAll('.size-btn').forEach(bb => bb.classList.remove('active'));
-      b.classList.add('active');
-      builderBoxSize = parseInt(b.dataset.size);
-      builderSelections = {}; // reset
-      renderBuilderFlavors();
-      renderBuilderSummary();
-    });
-  });
-
-  document.getElementById('addBoxToCartBtn').addEventListener('click', () => {
-    // mock adding box to cart
-    cart.push({
-      id: 'box_' + Date.now(),
-      name: `Custom Box (${builderBoxSize}pcs)`,
-      price: getBuilderPrice(),
-      quantity: 1,
-      image: 'https://images.unsplash.com/photo-1621582455850-252bbbc0ee73?w=300'
-    });
-    updateCartIcon();
-    builderSelections = {};
-    renderBuilderFlavors();
-    renderBuilderSummary();
-    document.getElementById('cartDrawerOverlay').classList.add('open');
-    renderCartDrawer();
-  });
-
-  renderBuilderFlavors();
-  renderBuilderSummary();
-}
-
-function getBuilderCount() {
-  return Object.values(builderSelections).reduce((a, b) => a + b, 0);
-}
-
-function getBuilderPrice() {
-  if (builderBoxSize === 4) return 600;
-  if (builderBoxSize === 6) return 850;
-  return 1600;
-}
-
-function renderBuilderFlavors() {
-  const container = document.getElementById('builderFlavors');
-  const isFull = getBuilderCount() >= builderBoxSize;
-  const flavors = products; // Allow all flavors in builder
-
-  document.getElementById('builderCountBadge').innerText = `${getBuilderCount()} / ${builderBoxSize} Selected`;
-
-  container.innerHTML = flavors.map(flavor => {
-    const qty = builderSelections[flavor.id] || 0;
-    return `
-      <div class="builder-item ${qty > 0 ? 'selected' : ''}">
-        <img src="${flavor.image}" alt="${flavor.name}">
-        <div class="builder-item-info">
-          <h4>${flavor.name}</h4>
-        </div>
-        <div class="qty-control">
-          <button onclick="builderUpdateQty('${flavor.id}', -1)" ${qty === 0 ? 'disabled' : ''}><i class="ph ph-minus"></i></button>
-          <span>${qty}</span>
-          <button onclick="builderUpdateQty('${flavor.id}', 1)" ${isFull ? 'disabled' : ''}><i class="ph ph-plus"></i></button>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-window.builderUpdateQty = function (id, delta) {
-  const current = builderSelections[id] || 0;
-  const isFull = getBuilderCount() >= builderBoxSize;
-
-  if (delta > 0 && isFull) return;
-  if (delta < 0 && current === 0) return;
-
-  const next = current + delta;
-  if (next <= 0) delete builderSelections[id];
-  else builderSelections[id] = next;
-
-  renderBuilderFlavors();
-  renderBuilderSummary();
-}
-
-function renderBuilderSummary() {
-  const sizeLabel = document.getElementById('summarySizeLabel');
-  const summaryList = document.getElementById('summaryList');
-  const summaryPrice = document.getElementById('summaryPrice');
-  const addBtn = document.getElementById('addBoxToCartBtn');
-
-  sizeLabel.innerText = builderBoxSize;
-  summaryPrice.innerText = `₹${getBuilderPrice()}`;
-
-  const count = getBuilderCount();
-  const isFull = count >= builderBoxSize;
-
-  if (count === 0) {
-    summaryList.innerHTML = `
-      <div class="empty-summary">
-        <i class="ph ph-plus-circle"></i>
-        <p>Select flavors to fill your box</p>
-      </div>
-    `;
-  } else {
-    // list out
-    let listHTML = '<ul class="summary-list">';
-    for (let id in builderSelections) {
-      const flavor = products.find(p => p.id == id);
-      if (!flavor) continue;
-      listHTML += `<li><span><strong>${builderSelections[id]} ×</strong> ${flavor.name}</span></li>`;
-    }
-    listHTML += '</ul>';
-    summaryList.innerHTML = listHTML;
-  }
-
-  addBtn.disabled = !isFull;
-  addBtn.innerHTML = isFull ? '<i class="ph ph-check"></i> Add to Cart' : 'Select More Flavors';
 }
 
 // REVIEWS
@@ -660,12 +537,13 @@ function attachTilt(nodeList, intensity = 10) {
   document.getElementById('closeSearchBtn')?.addEventListener('click', closeSearch);
   searchInput?.addEventListener('input', runSearch);
   document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { closeSearch(); closeProductModal(); closeCart(); } });
+  const WHATSAPP_ORDER_NUMBER = '917902770041'; // +91 79027 70041 — international format, no leading +
   document.querySelector('.cart-checkout-btn')?.addEventListener('click', () => {
     if (!cart.length) return toast('Your brownie box is empty.');
     const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const lines = cart.map(item => `• ${item.name} × ${item.quantity} — ₹${item.price * item.quantity}`);
     const message = ['Hello Hola Brownie! I would like to place an order:', '', ...lines, '', `Subtotal: ₹${subtotal}`, 'Please confirm availability and delivery.'].join('\n');
-    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`, '_blank', 'noopener');
+    window.open(`https://api.whatsapp.com/send?phone=${WHATSAPP_ORDER_NUMBER}&text=${encodeURIComponent(message)}`, '_blank', 'noopener');
   });
 
   // Logo assets are optional until the final brand mark is supplied.
@@ -686,10 +564,6 @@ function attachTilt(nodeList, intensity = 10) {
   }));
   document.getElementById('closeLightbox')?.addEventListener('click', () => { lightbox.hidden = true; document.body.style.overflow = ''; });
 
-
-  // A full 9-piece box gets its own tier instead of falling through to 12-piece pricing.
-  const originalBuilderPrice = getBuilderPrice;
-  getBuilderPrice = () => builderBoxSize === 9 ? 1200 : originalBuilderPrice();
 
   setTimeout(() => {
     if (!products.length) {
