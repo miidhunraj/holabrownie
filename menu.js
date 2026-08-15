@@ -17,10 +17,8 @@ let rawItems = [];        // every item, available or not
 let categories = [];      // categories table rows
 let cart = [];
 let activeCategory = 'all';
-let activePriceBucket = null; // { min, max } or null
 let searchQuery = '';
 let sortMode = 'recommended';
-let priceBuckets = [];
 
 let detailItem = null;
 let detailQty = 1;
@@ -40,12 +38,7 @@ async function init() {
     if (!rawItems.length) {
       renderEmptyMenuShell('Our menu is taking a little break.', 'Please check back soon.');
     } else {
-      buildPriceBuckets();
       renderCategoryNav();
-      renderPriceFilter();
-      renderStats();
-      renderSignature();
-      renderCravingChips();
       applyFiltersAndRender();
     }
   } catch (err) {
@@ -89,10 +82,7 @@ function renderFatalError() {
 }
 
 function renderEmptyMenuShell(title, body) {
-  document.getElementById('signatureSection').classList.add('is-hidden');
   document.getElementById('menuControls').classList.add('is-hidden');
-  document.getElementById('cravingSection').classList.add('is-hidden');
-  document.getElementById('statsStrip').classList.add('is-hidden');
   document.getElementById('menuList').innerHTML = `
     <div class="empty-panel">
       <i class="ph ph-cookie"></i>
@@ -107,26 +97,6 @@ function renderEmptyMenuShell(title, body) {
 function categoryName(id) {
   const c = categories.find(c => c.id === id);
   return c ? c.name : null;
-}
-
-function buildPriceBuckets() {
-  const prices = rawItems.filter(i => i.is_available).map(i => i.price).filter(p => typeof p === 'number');
-  const unique = [...new Set(prices)].sort((a, b) => a - b);
-  if (unique.length < 4) { priceBuckets = []; return; }
-
-  const sorted = [...prices].sort((a, b) => a - b);
-  const t1 = sorted[Math.floor(sorted.length / 3)];
-  const t2 = sorted[Math.floor((sorted.length * 2) / 3)];
-  const round = n => Math.round(n / 10) * 10;
-  const low = round(t1), high = round(t2);
-
-  if (low <= sorted[0] || high <= low) { priceBuckets = []; return; }
-
-  priceBuckets = [
-    { label: `Under ₹${low}`, min: -Infinity, max: low },
-    { label: `₹${low}–₹${high}`, min: low, max: high },
-    { label: `₹${high}+`, min: high, max: Infinity }
-  ];
 }
 
 // ============================================================
@@ -154,82 +124,12 @@ function renderCategoryNav() {
 }
 
 // ============================================================
-// RENDER: price filter
-// ============================================================
-function renderPriceFilter() {
-  const wrap = document.getElementById('priceFilter');
-  if (!priceBuckets.length) { wrap.classList.add('is-hidden'); return; }
-  wrap.classList.remove('is-hidden');
-  wrap.innerHTML = priceBuckets.map((b, i) => `
-    <button class="price-chip ${activePriceBucket === i ? 'active' : ''}" data-idx="${i}">${b.label}</button>
-  `).join('');
-  wrap.querySelectorAll('.price-chip').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const idx = Number(btn.dataset.idx);
-      activePriceBucket = activePriceBucket === idx ? null : idx;
-      renderPriceFilter();
-      applyFiltersAndRender();
-    });
-  });
-}
-
-// ============================================================
-// RENDER: stats strip
-// ============================================================
-function renderStats() {
-  const available = rawItems.filter(i => i.is_available);
-  const usedCatIds = new Set(rawItems.map(i => i.category_id));
-  const catCount = categories.filter(c => usedCatIds.has(c.id)).length;
-
-  document.getElementById('statsStrip').innerHTML = `
-    <div class="stat-block"><strong>${available.length}</strong><span>Brownies</span></div>
-    <div class="stat-block"><strong>${catCount}</strong><span>Categories</span></div>
-    <div class="stat-block"><strong>Small Batch</strong><span>Every Day</span></div>
-  `;
-}
-
-// ============================================================
-// RENDER: signature treats (real best_seller field only)
-// ============================================================
-function renderSignature() {
-  const section = document.getElementById('signatureSection');
-  const featured = rawItems.filter(i => i.best_seller && i.is_available).slice(0, 6);
-  if (!featured.length) { section.classList.add('is-hidden'); return; }
-  section.classList.remove('is-hidden');
-
-  document.getElementById('signatureGrid').innerHTML = featured.map(item => `
-    <div class="sig-card reveal" data-id="${item.id}" tabindex="0" role="button" aria-label="View ${escapeHtml(item.title)}">
-      <div class="sig-star"><i class="ph-fill ph-star"></i> Bestseller</div>
-      <h3>${escapeHtml(item.title)}</h3>
-      <p>${escapeHtml(item.description || '')}</p>
-      <div class="sig-foot">
-        <span class="sig-price">₹${item.price}</span>
-        <span class="sig-add" data-quickadd="${item.id}" aria-hidden="true"><i class="ph ph-plus"></i></span>
-      </div>
-    </div>
-  `).join('');
-
-  document.querySelectorAll('.sig-card').forEach(card => {
-    card.addEventListener('click', (e) => {
-      if (e.target.closest('[data-quickadd]')) { quickAdd(e.target.closest('[data-quickadd]').dataset.quickadd); return; }
-      openDetail(card.dataset.id);
-    });
-    card.addEventListener('keydown', (e) => { if (e.key === 'Enter') openDetail(card.dataset.id); });
-  });
-}
-
-// ============================================================
 // FILTER + SORT + RENDER FULL LIST
 // ============================================================
 function getFilteredSortedItems() {
   let list = [...rawItems];
 
   if (activeCategory !== 'all') list = list.filter(i => i.category_id === activeCategory);
-
-  if (activePriceBucket !== null && priceBuckets[activePriceBucket]) {
-    const { min, max } = priceBuckets[activePriceBucket];
-    list = list.filter(i => i.price >= min && i.price < max);
-  }
 
   if (searchQuery.trim()) {
     const q = searchQuery.trim().toLowerCase();
@@ -270,34 +170,52 @@ function applyFiltersAndRender() {
         <button class="btn-ghost" id="showAllBtn">Show All Brownies</button>
       </div>`;
     document.getElementById('showAllBtn').addEventListener('click', () => {
-      activeCategory = 'all'; activePriceBucket = null; searchQuery = '';
+      activeCategory = 'all'; searchQuery = '';
       document.getElementById('menuSearch').value = '';
-      renderCategoryNav(); renderPriceFilter(); applyFiltersAndRender();
+      renderCategoryNav(); applyFiltersAndRender();
     });
     return;
   }
 
-  listEl.innerHTML = list.map((item, i) => {
-    const cat = categoryName(item.category_id);
-    const num = String(i + 1).padStart(2, '0');
+  let num = 0;
+  const rowHtml = (item) => {
+    num++;
+    const numStr = String(num).padStart(2, '0');
     const inCart = cart.find(c => c.id === item.id);
     return `
     <div class="menu-row reveal ${item.is_available ? '' : 'unavailable'}" data-id="${item.id}" role="listitem" tabindex="0">
-      <span class="mr-num">${num}</span>
+      <span class="mr-num">${numStr}</span>
       <div class="mr-body">
         <h3>${escapeHtml(item.title)}
           ${item.best_seller ? '<span class="badge-mini badge-best">Bestseller</span>' : ''}
           ${!item.is_available ? '<span class="badge-mini badge-unavailable">Currently Unavailable</span>' : ''}
         </h3>
         ${item.description ? `<p>${escapeHtml(item.description)}</p>` : ''}
-        ${cat ? `<div class="mr-meta">${escapeHtml(cat)}</div>` : ''}
       </div>
       <div class="mr-price">₹${item.price}</div>
       <button class="mr-add ${inCart ? 'in-order' : ''}" data-add="${item.id}" ${!item.is_available ? 'disabled' : ''}>
         ${!item.is_available ? 'Unavailable' : inCart ? `In Order · ${inCart.quantity}` : '+ Add'}
       </button>
     </div>`;
-  }).join('');
+  };
+
+  const usedCatIds = new Set(list.map(i => i.category_id));
+  const orderedCats = categories.filter(c => usedCatIds.has(c.id));
+  const uncategorized = list.filter(i => !orderedCats.some(c => c.id === i.category_id));
+
+  let html = '';
+  orderedCats.forEach(cat => {
+    const items = list.filter(i => i.category_id === cat.id);
+    if (!items.length) return;
+    html += `<div class="menu-cat-heading reveal">${escapeHtml(cat.name)}</div>`;
+    html += items.map(rowHtml).join('');
+  });
+  if (uncategorized.length) {
+    if (orderedCats.length) html += `<div class="menu-cat-heading reveal">Menu</div>`;
+    html += uncategorized.map(rowHtml).join('');
+  }
+
+  listEl.innerHTML = html;
 
   listEl.querySelectorAll('.menu-row').forEach(row => {
     row.addEventListener('click', (e) => {
@@ -311,29 +229,6 @@ function applyFiltersAndRender() {
   });
 
   initRevealObserver();
-}
-
-// ============================================================
-// CRAVING DISCOVERY (derived from real categories)
-// ============================================================
-function renderCravingChips() {
-  const usedCatIds = new Set(rawItems.map(i => i.category_id));
-  const usable = categories.filter(c => usedCatIds.has(c.id));
-  const wrap = document.getElementById('cravingChips');
-  if (!usable.length) { document.getElementById('cravingSection').classList.add('is-hidden'); return; }
-
-  wrap.innerHTML = usable.map(c => `<button class="craving-chip" data-cat="${c.id}">${c.icon ? c.icon + ' ' : ''}${escapeHtml(c.name)}</button>`).join('');
-  wrap.querySelectorAll('.craving-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      wrap.querySelectorAll('.craving-chip').forEach(c => c.classList.remove('active'));
-      chip.classList.add('active');
-      activeCategory = chip.dataset.cat;
-      renderCategoryNav();
-      applyFiltersAndRender();
-      document.getElementById('cravingNote').textContent = `Showing your ${chip.textContent.trim()} favourites`;
-      document.getElementById('fullMenu').scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-  });
 }
 
 // ============================================================
@@ -394,7 +289,6 @@ function addToCart(item, qty) {
   saveCart();
   updateOrderUI();
   applyFiltersAndRender();
-  renderSignature();
 }
 
 function updateCartQty(id, delta) {
@@ -531,6 +425,9 @@ function wireStaticEvents() {
     closeDetail();
   });
 
+  // Download menu (JPG)
+  document.getElementById('downloadMenuBtn').addEventListener('click', handleDownloadMenu);
+
   // Order panel
   document.getElementById('openOrderBtn').addEventListener('click', openOrderPanel);
   document.getElementById('orderClose').addEventListener('click', closeOrderPanel);
@@ -555,6 +452,198 @@ function wireStaticEvents() {
     if (e.key !== 'Escape') return;
     if (document.getElementById('detailOverlay').classList.contains('open')) closeDetail();
     if (document.getElementById('orderPanel').classList.contains('open')) closeOrderPanel();
+  });
+}
+
+// ============================================================
+// DOWNLOAD MENU — clean, brand-styled JPG export(s)
+// Rendered from a hidden export container, never a screenshot
+// of the live page. Auto-splits into multiple JPGs if the menu
+// is too long for one image; never cuts an item in half.
+// ============================================================
+const EXPORT_WIDTH = 1000;
+const EXPORT_MAX_BODY_HEIGHT = 1450; // px, at 1x scale, per page body
+
+async function handleDownloadMenu() {
+  const btn = document.getElementById('downloadMenuBtn');
+  if (btn.disabled) return;
+  if (!rawItems.filter(i => i.is_available).length) {
+    showToast('No menu items to download yet.');
+    return;
+  }
+
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ph ph-circle-notch ph-spin"></i> Preparing…';
+
+  try {
+    await ensureHtml2Canvas();
+    const nodes = buildExportNodes();
+    const pages = paginateExportNodes(nodes);
+
+    for (let i = 0; i < pages.length; i++) {
+      const canvas = await renderExportPage(pages[i], i + 1, pages.length);
+      const filename = pages.length > 1 ? `hola-brownie-menu-${i + 1}.jpg` : 'hola-brownie-menu.jpg';
+      await downloadCanvasAsJpg(canvas, filename);
+    }
+    showToast(pages.length > 1 ? `Downloaded ${pages.length} menu images` : 'Menu downloaded');
+  } catch (err) {
+    console.warn('Menu download failed:', err);
+    showToast('Could not generate the menu right now. Please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+  }
+}
+
+function ensureHtml2Canvas() {
+  if (window.html2canvas) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('Failed to load html2canvas'));
+    document.head.appendChild(s);
+  });
+}
+
+// Build a flat list of category headers + items, in the same
+// category order as the live menu, numbered continuously.
+// Uses the currently loaded live product data — never a
+// hard-coded list.
+function buildExportNodes() {
+  const available = rawItems.filter(i => i.is_available);
+  const usedCatIds = new Set(available.map(i => i.category_id));
+  const orderedCats = categories.filter(c => usedCatIds.has(c.id));
+
+  const nodes = [];
+  let counter = 1;
+
+  orderedCats.forEach(cat => {
+    const items = available.filter(i => i.category_id === cat.id);
+    if (!items.length) return;
+    nodes.push({ type: 'category', name: cat.name });
+    items.forEach(item => nodes.push({ type: 'item', item, number: String(counter++).padStart(2, '0') }));
+  });
+
+  const uncategorized = available.filter(i => !orderedCats.some(c => c.id === i.category_id));
+  if (uncategorized.length) {
+    if (orderedCats.length) nodes.push({ type: 'category', name: 'Menu' });
+    uncategorized.forEach(item => nodes.push({ type: 'item', item, number: String(counter++).padStart(2, '0') }));
+  }
+
+  return nodes;
+}
+
+function exportNodeHtml(node) {
+  if (node.type === 'category') {
+    return `<div class="export-category">${escapeHtml(node.name)}</div>`;
+  }
+  const item = node.item;
+  return `
+    <div class="export-item">
+      <span class="export-num">${node.number}</span>
+      <div class="export-item-main">
+        <div class="export-item-row">
+          <span class="export-item-name">${escapeHtml(item.title)}</span>
+          <span class="export-item-price">₹${item.price}</span>
+        </div>
+        ${item.description ? `<p class="export-item-desc">${escapeHtml(item.description)}</p>` : ''}
+      </div>
+    </div>`;
+}
+
+// Measures real rendered height in a hidden container to decide
+// where to split pages, so a product is never cut in half and a
+// category heading never ends up alone at the bottom of a page.
+function paginateExportNodes(nodes) {
+  const measurer = document.createElement('div');
+  measurer.className = 'export-page';
+  Object.assign(measurer.style, { position: 'fixed', left: '-99999px', top: '0', width: EXPORT_WIDTH + 'px', padding: '0', visibility: 'hidden' });
+  const body = document.createElement('div');
+  body.className = 'export-body';
+  measurer.appendChild(body);
+  document.body.appendChild(measurer);
+
+  const pages = [];
+  let current = [];
+
+  function heightOf(list) {
+    body.innerHTML = list.map(exportNodeHtml).join('');
+    return body.offsetHeight;
+  }
+
+  function pushPage() {
+    // never leave a lone category heading at the end of a page
+    if (current.length && current[current.length - 1].type === 'category') {
+      const dangling = current.pop();
+      pages.push(current);
+      current = [dangling];
+    } else {
+      pages.push(current);
+      current = [];
+    }
+  }
+
+  nodes.forEach(node => {
+    current.push(node);
+    if (heightOf(current) > EXPORT_MAX_BODY_HEIGHT) {
+      current.pop();
+      if (!current.length) {
+        // single node taller than the max on its own — keep it alone rather than lose it
+        current.push(node);
+      } else {
+        pushPage();
+        current.push(node);
+      }
+    }
+  });
+  if (current.length) pages.push(current);
+
+  document.body.removeChild(measurer);
+  return pages.length ? pages : [[]];
+}
+
+async function renderExportPage(pageNodes, pageNum, totalPages) {
+  const container = document.createElement('div');
+  container.className = 'export-page';
+  Object.assign(container.style, { position: 'fixed', left: '-99999px', top: '0', width: EXPORT_WIDTH + 'px' });
+  container.innerHTML = `
+    <div class="export-header">
+      <div class="export-brand">Hola Brownie</div>
+      <div class="export-subtitle">The Menu</div>
+    </div>
+    <div class="export-body">${pageNodes.map(exportNodeHtml).join('')}</div>
+    ${totalPages > 1 ? `<div class="export-footer">Page ${pageNum} of ${totalPages}</div>` : ''}
+  `;
+  document.body.appendChild(container);
+
+  if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
+  await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+  let canvas;
+  try {
+    canvas = await window.html2canvas(container, { backgroundColor: '#FBF3EE', scale: 2, useCORS: true, logging: false });
+  } finally {
+    document.body.removeChild(container);
+  }
+  return canvas;
+}
+
+function downloadCanvasAsJpg(canvas, filename) {
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => {
+      if (!blob) { resolve(); return; }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+      resolve();
+    }, 'image/jpeg', 0.92);
   });
 }
 
