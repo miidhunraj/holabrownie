@@ -32,6 +32,9 @@
       <a href="index.html" class="back-link"><i class="ph ph-arrow-left"></i> Back to Hola Brownie</a>
       <div class="menu-brand">Hola <em>Brownie</em></div>
       <div class="menu-nav-actions">
+        <button class="download-menu-btn" id="downloadMenuBtn">
+          <i class="ph ph-download-simple"></i> Download Menu
+        </button>
         <button class="nav-order-btn" id="openOrderBtn" aria-haspopup="dialog">
           <i class="ph ph-shopping-bag"></i> Your Order
           <span class="nav-order-count" id="navOrderCount">0</span>
@@ -42,30 +45,13 @@
 
   <main id="mainContent" aria-busy="true">
 
-    <!-- HERO -->
-    <header class="menu-hero">
-      <span class="hero-particle hp-1" aria-hidden="true"></span>
-      <span class="hero-particle hp-2" aria-hidden="true"></span>
-      <span class="hero-particle hp-3" aria-hidden="true"></span>
+    <!-- TITLE -->
+    <header class="menu-title-block">
       <div class="wrap">
-        <span class="hero-eyebrow">Hola Brownie</span>
-        <h1 class="hero-mark">The <em>Menu</em></h1>
-        <p class="hero-sub">Small-batch brownies, made for serious cravings. Every entry below is priced simply and
-          ready to order.</p>
-        <a href="#fullMenu" class="hero-scroll-cta">Explore the full menu <i class="ph ph-arrow-down"></i></a>
+        <h1 class="mt-brand">Hola Brownie</h1>
+        <p class="mt-sub">The Menu</p>
       </div>
     </header>
-
-    <!-- INTRO -->
-    <section class="menu-intro wrap reveal">
-      <p>Every brownie has a story. From rich classics to indulgent specials, find the one that deserves your next
-        craving.</p>
-    </section>
-
-    <!-- STATS -->
-    <section class="stats-strip reveal" id="statsStrip" aria-label="Menu statistics">
-      <!-- JS populated -->
-    </section>
 
     <!-- CONTROLS -->
     <div class="menu-controls" id="menuControls">
@@ -90,39 +76,14 @@
             </select>
           </div>
         </div>
-        <div class="price-filter" id="priceFilter" aria-label="Filter by price"></div>
         <p class="results-count" id="resultsCount" role="status" aria-live="polite"></p>
       </div>
     </div>
 
-    <!-- SIGNATURE TREATS -->
-    <section class="signature-section wrap reveal" id="signatureSection">
-      <div class="section-label">
-        <h2>Signature Treats</h2>
-        <span>a few favourites worth starting with</span>
-      </div>
-      <div class="signature-grid" id="signatureGrid"></div>
-    </section>
-
     <!-- FULL MENU -->
     <section class="full-menu-section wrap" id="fullMenu">
-      <div class="section-label reveal">
-        <h2>Full Menu</h2>
-      </div>
       <div class="menu-list" id="menuList" role="list">
         <!-- JS populated -->
-      </div>
-    </section>
-
-    <!-- CRAVING DISCOVERY -->
-    <section class="craving-section" id="cravingSection">
-      <div class="wrap reveal">
-        <div class="section-label">
-          <h2>Find Your Craving</h2>
-          <span>pick a mood, we'll point you there</span>
-        </div>
-        <div class="craving-chips" id="cravingChips"></div>
-        <p class="craving-result-note" id="cravingNote"></p>
       </div>
     </section>
 
